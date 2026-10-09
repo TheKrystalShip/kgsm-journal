@@ -9,13 +9,13 @@ namespace TheKrystalShip.KGSM.Tests.Services;
 /// Reading back what a producer's own journal last said about itself.
 /// </summary>
 /// <remarks>
-/// The memory a process that exits does not have. Measured on the speech leaf: it reported a model
+/// The memory a process that exits does not have. Measured on the speech daemon: it reported a model
 /// it could not load, exited when idle, woke with the model fixed, and wrote no recovery — because the
 /// fresh process had never seen the fault.
 /// </remarks>
 public sealed class LeafStateTests : IDisposable
 {
-    private const string Producer = "kgsm-speech";
+    private const string Producer = "tks-speech";
 
     private readonly string _root;
     private readonly string _directory;
