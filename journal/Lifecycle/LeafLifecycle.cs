@@ -74,7 +74,7 @@ public sealed class LeafLifecycle : JournalRecorder
     /// What this producer already reported broken and has not reported fixed, so a transition can be
     /// measured against something this process did not itself observe.
     /// <para>
-    /// <b>A leaf that exits between observations needs this.</b> Measured on the speech leaf: it
+    /// <b>A leaf that exits between observations needs this.</b> Measured on a speech daemon: it
     /// reported a model it could not load, exited when idle, woke with the model fixed, and wrote no
     /// recovery — because the fresh process had never seen the fault. Seed it with
     /// <see cref="LeafState.DegradedComponentsFor"/> and both directions work across a restart. A

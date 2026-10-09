@@ -216,7 +216,7 @@ public sealed class LeafLifecycleTests : IDisposable
     [Fact]
     public void A_leaf_that_wakes_healthy_after_reporting_a_fault_clears_it()
     {
-        // The defect this seed exists for, measured on the speech leaf: it reported a model it could
+        // The defect this seed exists for, measured on a speech daemon: it reported a model it could
         // not load, exited when idle, woke with the model fixed, and wrote no recovery — because the
         // fresh process had never seen the fault. A journal that reports a fault and can never clear
         // it is worse than one that reports neither.
