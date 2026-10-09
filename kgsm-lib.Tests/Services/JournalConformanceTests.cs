@@ -109,12 +109,12 @@ public sealed class JournalConformanceTests : IDisposable
     {
         // The copy-paste that is one plausible mistake away: a leaf naming its producer after its unit
         // while writing to its state directory. Every event lands under the other name.
-        string? problem = Options("kgsm-assistant-service", "/var/lib/kgsm-assistant/events")
+        string? problem = Options("kgsm-widget-service", "/var/lib/kgsm-widget/events")
             .DescribeDirectoryMismatch();
 
         Assert.NotNull(problem);
-        Assert.Contains("kgsm-assistant", problem);
-        Assert.Contains("kgsm-assistant-service", problem);
+        Assert.Contains("kgsm-widget", problem);
+        Assert.Contains("kgsm-widget-service", problem);
     }
 
     [Fact]
