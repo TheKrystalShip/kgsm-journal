@@ -143,7 +143,7 @@ public static class AuditId
     /// <remarks>
     /// <para>
     /// <b>A line's minted id is the better identity and this prefers it.</b> A position is right only
-    /// while a segment is appended to and deleted whole (conformance §2·l); delete one line and every
+    /// while a segment is appended to and deleted whole (reference/event-journal.md); delete one line and every
     /// id after it silently becomes the id of a different event. An id is the line's own name, so it
     /// survives that — the row keeps its identity and the rewrite shows up as a position that no longer
     /// resolves, which is a fault somebody can see.

@@ -9,7 +9,7 @@ namespace TheKrystalShip.KGSM.Core.Models;
 /// This is where the event <em>is</em>; <see cref="EventId"/> is what it is <em>called</em>. Until
 /// every line on disk carries a name, the location does the identifying, and it is an identity
 /// <b>borrowed from a promise</b>: each event is
-/// one whole line, and a segment is only ever appended to and deleted whole (conformance §2·l). While
+/// one whole line, and a segment is only ever appended to and deleted whole (reference/event-journal.md). While
 /// that holds, no two events share a position and no event's position changes, which is what lets
 /// <see cref="TheKrystalShip.KGSM.Events.AuditId.ForPosition(string, long)"/> turn it into a stable id.
 /// </para>
@@ -17,7 +17,7 @@ namespace TheKrystalShip.KGSM.Core.Models;
 /// <b>Rewrite a segment and this breaks silently.</b> Deleting one line shifts every byte after it,
 /// and a stored position then resolves to a real, parseable event that is simply not the one it named
 /// — no exception, nothing malformed, and every reading derived from it as trustworthy-looking as one
-/// derived from the truth. Nothing here can detect that; it is prevented upstream by §2·l, and
+/// derived from the truth. Nothing here can detect that; it is prevented upstream by the segment rule, and
 /// detected downstream by a consumer that kept a baseline to compare against.
 /// </para>
 /// <para>

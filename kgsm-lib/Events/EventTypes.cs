@@ -91,7 +91,7 @@ public class EventWrapper
 {
     /// <summary>
     /// Gets or sets the line's own name — the id its producer minted when it wrote the line
-    /// (conformance §2·m). <see langword="null"/> when the line carries none.
+    /// (reference/event-envelope.md). <see langword="null"/> when the line carries none.
     /// </summary>
     /// <remarks>
     /// <para>

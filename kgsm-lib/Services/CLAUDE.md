@@ -62,12 +62,12 @@ a raw handler first (raw handlers run before typed dispatch, for every envelope)
 The position says where the event **is**. `AuditId.ForPosition` turns it into
 `evt_<segment>_<offset>` — unique by construction, and ordered like the file, so one value works as an
 id and as a pagination cursor. That rests on a promise rather than on arithmetic: one line per event,
-and segments appended to and deleted whole (conformance §2·l). **Rewrite a segment and it breaks
+and segments appended to and deleted whole (`../kgsm-docs/reference/event-journal.md`). **Rewrite a segment and it breaks
 silently** — deleting a line shifts every byte after it, and a stored position then resolves to a real,
 parseable event of the wrong kind.
 
 `EventWrapper.Id` and `EventPosition.EventId` say what the event is **called** — the UUIDv7 its producer
-minted at write time (§2·m). `EventService` joins the id onto the position once, for every handler, so a
+minted at write time (`../kgsm-docs/reference/event-envelope.md`). `EventService` joins the id onto the position once, for every handler, so a
 consumer storing a reference keeps identity and location together and can check one against the other.
 **Null is unknown, never a mismatch:** lines written before the field existed are readable for as long
 as retention holds them.

@@ -2,14 +2,12 @@
 
 ## Project Overview
 
-KGSM-Lib is a C# library (.NET 10.0) that provides interop capabilities with
-[KGSM](https://github.com/TheKrystalShip/KGSM), a Linux game server manager. It is **the single C#↔engine
-chokepoint**: every other C# project reaches kgsm (by shell process execution) and its event journal
-through here. Linux-only — it relies on bash scripts, and on Unix sockets for the watchdog/firewall
-clients. KGSM itself is not bundled and must be installed separately.
+KGSM-Lib is the .NET library through which every other C# project reaches the engine, the watchdog and
+firewall sockets and the event journals. Linux-only; KGSM itself is not bundled. Role, contracts and peers:
+`../kgsm-docs/components/kgsm-lib.md`; model: `../kgsm-docs/systems/engine/kgsm-lib.md`.
 
-**Key architecture**: **`IKgsmClient`** (the facade every consumer starts from) →
-**BlueprintService/InstanceService/EventService** → **ProcessRunner/IEventSource** (infrastructure).
+Entry point: **`IKgsmClient`**, the facade every consumer starts from, over
+BlueprintService/InstanceService/EventService, over ProcessRunner/IEventSource.
 
 **Each area's rules live in a `CLAUDE.md` beside its code**: `kgsm-lib/Json/` (source-generated
 deserialization — how to register a type), `kgsm-lib/Services/` (process execution, the event system,
@@ -78,3 +76,12 @@ rather than time.
 - **Version source:** `<Version>` in `kgsm-lib/kgsm-lib.csproj`.
 - Bump the version whenever you make a user-facing change (patch for fixes, minor for features, major
   for breaking changes), with a `CHANGELOG.md` entry under `## [Unreleased]`.
+
+## Read before changing
+
+- `../kgsm-docs/reference/event-envelope.md`, `event-journal.md`, `event-vocabulary.md`: the journal line,
+  the segment rules and the event catalog this library mirrors.
+- `../kgsm-docs/reference/maintenance-windows.md`: the grammar `Core/Scheduling/` implements.
+- `../kgsm-docs/reference/action-manifest.md`: the manifest `KgsmActions` mirrors.
+- `../kgsm-docs/reference/firewall-authority.md`: the firewall client's wire contract.
+- `../kgsm-docs/decisions/0017-lib-is-the-only-csharp-door.md`.

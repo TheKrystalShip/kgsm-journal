@@ -399,7 +399,7 @@ public sealed class JournalConformanceTests : IDisposable
         Assert.Null(JournalAccess.DescribeUnreachable(null));
     }
 
-    // ── The line's own id (§2·m) ─────────────────────────────────────────────────────────
+    // ── The line's own id ─────────────────────────────────────────────────────────
 
     [Fact]
     public async Task Writer_GivesEveryLineAUuidV7()
@@ -444,7 +444,7 @@ public sealed class JournalConformanceTests : IDisposable
     [Fact]
     public async Task Writer_ProducesALineThatStillConforms()
     {
-        // The ordering constraint behind §2·m, closed end to end: the checker has to already know the
+        // The ordering constraint behind the line id, closed end to end: the checker has to already know the
         // field, or the first producer to emit an id reports every line as having invented one.
         string dir = Segments("kgsm-monitor");
         IEventJournalWriter writer = new EventJournalWriter(
@@ -463,7 +463,7 @@ public sealed class JournalConformanceTests : IDisposable
     [Fact]
     public void Retention_LeavesEveryKeptSegmentByteIdentical()
     {
-        // §2·l as a test. Every stored position on this host — the reactor's ledger, the audit ids the
+        // The segment rule as a test. Every stored position on this host — the reactor's ledger, the audit ids the
         // API derives and paginates on — is a byte offset into a named segment, so a pruner that
         // rewrote a file rather than unlinking it would silently misplace every event after the cut.
         // Asserted on the bytes rather than on "the file is still there", because copytruncate and
@@ -471,7 +471,7 @@ public sealed class JournalConformanceTests : IDisposable
         string dir = Segments("kgsm-api", "2026-01-01", "2026-08-16");
         string kept = Path.Combine(dir, "2026-08-16.ndjson");
 
-        // Several lines, not the helper's single one: the failure §2·l names is dropping the first N
+        // Several lines, not the helper's single one: the failure the segment rule names is dropping the first N
         // lines of a segment that is otherwise kept, and a one-line fixture cannot tell that apart
         // from removing the file.
         File.WriteAllText(kept, """{"V":1,"EventType":"a"}""" + "\n"

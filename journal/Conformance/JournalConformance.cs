@@ -45,7 +45,7 @@ public static class JournalConformance
     /// <para>
     /// <c>Id</c> is optional and stays optional. Lines written before it existed are on disk for as
     /// long as retention holds them, so a reader meets one that has no id for years yet — and absent
-    /// means <b>unknown</b>, never a mismatch (§2·e).
+    /// means <b>unknown</b>, never a mismatch.
     /// </para>
     /// </remarks>
     public static readonly IReadOnlyList<string> OptionalFields =
