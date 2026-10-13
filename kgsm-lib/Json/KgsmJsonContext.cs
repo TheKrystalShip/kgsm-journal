@@ -142,6 +142,7 @@ namespace TheKrystalShip.KGSM;
 [JsonSerializable(typeof(AuthSessionEventData))]
 [JsonSerializable(typeof(AuthSessionRevokedData))]
 [JsonSerializable(typeof(AuthLockedOutData))]
+[JsonSerializable(typeof(AuthAdminRefusedData))]
 [JsonSerializable(typeof(UserAccountEventData))]
 [JsonSerializable(typeof(IdentityLinkEventData))]
 [JsonSerializable(typeof(AssignmentEventData))]

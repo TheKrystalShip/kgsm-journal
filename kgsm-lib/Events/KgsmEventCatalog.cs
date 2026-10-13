@@ -350,6 +350,17 @@ public static class KgsmEventCatalog
                 [UserId, Username, Identity, Field("FailedCount", FieldShape.Number),
                  Field("Until", FieldShape.Timestamp)]),
 
+            // A refused attempt at an administrator-only surface. The anchor coalesces a minute of the
+            // same refusal into one line carrying a count. The address is where a scanner is read from,
+            // so it is personal; the account is only named when the anchor knew who asked.
+            new EventDescriptor("auth.admin.refused", EventSubject.Account, EventWeight.Fact,
+                EventOutcome.Failure,
+                [Field("Surface", FieldShape.Text), Field("Route", FieldShape.Text),
+                 Field("Account", FieldShape.Identity),
+                 Field("Address", FieldShape.Identity, FieldSensitivity.Personal),
+                 Field("Count", FieldShape.Number)],
+                typeof(AuthAdminRefusedData), Known: true),
+
             // An account's standing is only ever changed by whoever writes the account store, so these
             // are the whole record of an account arriving, being let in, switched off and removed.
             Account<UserAccountEventData>("user.provisioned", EventOutcome.Neutral, AccountChangeFields),

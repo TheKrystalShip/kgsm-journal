@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — refused admin attempts (`TheKrystalShip.KGSM.Lib` 9.3.0)
+
+- **`auth.admin.refused` is in the catalog** (Failure, about an account), read into
+  `AuthAdminRefusedData` (`Surface`, `Route`, `Account`, `Address`, `Count`) and registered in
+  `KgsmJsonContext`. `Address` is `Personal`; `Account` is null when nobody was identified.
+
 ### Added — applications and token exchange (`TheKrystalShip.KGSM.Lib` 9.2.0)
 
 - **The auth anchor's application events are in the catalog**, with `ApplicationEventData` (`Id`,

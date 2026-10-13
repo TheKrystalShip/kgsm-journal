@@ -1427,6 +1427,38 @@ public class AuthLockedOutData : AccountEventDataBase
 }
 
 /// <summary>
+/// Data for <c>auth.admin.refused</c> — the auth anchor turned somebody away from an
+/// administrator-only surface.
+/// </summary>
+/// <remarks>
+/// <para>
+/// One line stands for every refusal of the same surface, account and address within a minute:
+/// <see cref="Count"/> is how many it stands for, so a scanner is one row rather than a flood.
+/// </para>
+/// <para>
+/// Not an <see cref="AccountEventDataBase"/>: the refused party is frequently nobody the anchor could
+/// identify, and the account is named by <see cref="Account"/> only when it was.
+/// </para>
+/// </remarks>
+public class AuthAdminRefusedData : KgsmEventDataBase
+{
+    /// <summary>Gets or sets where the refusal happened: <c>document</c>, <c>token</c> or <c>route</c>.</summary>
+    public string Surface { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the path that was asked for, or the token endpoint for a token.</summary>
+    public string Route { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the username it was refused to, or null when nobody was identified.</summary>
+    public string? Account { get; set; }
+
+    /// <summary>Gets or sets where the request came from, or null when that is not known.</summary>
+    public string? Address { get; set; }
+
+    /// <summary>Gets or sets how many refusals this line stands for.</summary>
+    public int Count { get; set; }
+}
+
+/// <summary>
 /// Data for the <c>user.*</c> events — an account was provisioned, approved, disabled, deleted, or
 /// had its password set.
 /// </summary>
