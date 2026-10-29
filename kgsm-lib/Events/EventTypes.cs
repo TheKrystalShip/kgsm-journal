@@ -1236,6 +1236,80 @@ public class LibraryRemovedData : LibraryEventDataBase
 }
 
 /// <summary>
+/// Data for <c>library.renamed</c> and <c>library.failed</c> — a library mutation kgsm-api issued that
+/// the engine records nothing about: a rename, or an attempt the engine refused.
+/// </summary>
+/// <remarks>
+/// One payload for both types, told apart by which type fired. <see cref="Error"/> is the engine's own
+/// stderr and <see cref="ExitCode"/> its own number; a refused removal names the instances that blocked
+/// it there.
+/// </remarks>
+public class LibraryOutcomeEventData : LibraryEventDataBase
+{
+    /// <summary>Gets or sets which mutation was asked for (<c>add</c>, <c>remove</c>, <c>rename</c>).</summary>
+    public string Verb { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the root's absolute path, when the request named one.</summary>
+    public string? Path { get; set; }
+
+    /// <summary>Gets or sets the name a rename moved the library to. Null for the other verbs.</summary>
+    public string? NewName { get; set; }
+
+    /// <summary>Gets or sets the engine's failure detail, verbatim. Null on a successful rename.</summary>
+    public string? Error { get; set; }
+
+    /// <summary>Gets or sets the engine's exit code, when a process ran to produce one.</summary>
+    public int? ExitCode { get; set; }
+}
+
+/// <summary>
+/// The base for what the DNS anchor reports about one name in the cluster's zone.
+/// </summary>
+/// <remarks>
+/// The subject is the name, not an instance: a game's name points at a server without being an event
+/// that server produced, and a node's own name belongs to no server at all.
+/// </remarks>
+public abstract class DnsNameEventDataBase : KgsmEventDataBase
+{
+    /// <summary>Gets or sets the fully qualified name.</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets what the name stands for, as the record's mark spells it (<c>member</c>, <c>capability</c>, <c>game</c>, <c>alias</c>, <c>capability-alias</c>).</summary>
+    public string Kind { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the member the name belongs to.</summary>
+    public string Member { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the capability or instance the name stands for, empty for a node's own name.</summary>
+    public string Key { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Data for <c>dns.name.published</c> — a record was created for a name.
+/// </summary>
+public class DnsNamePublishedData : DnsNameEventDataBase
+{
+    /// <summary>Gets or sets the record type.</summary>
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets what the record points at.</summary>
+    public string Content { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets what the record pointed at before. Null on a first publication.</summary>
+    public string? From { get; set; }
+}
+
+/// <summary>
+/// Data for <c>dns.name.withdrawn</c> — a name's record was deleted: the name was released, or can no
+/// longer be pointed anywhere.
+/// </summary>
+public class DnsNameWithdrawnData : DnsNameEventDataBase
+{
+    /// <summary>Gets or sets why, in one line. Null for a name whose row was released.</summary>
+    public string? Reason { get; set; }
+}
+
+/// <summary>
 /// The shared shape of a threshold episode event — a measured value crossing a line this host watches,
 /// and later coming back.
 /// </summary>

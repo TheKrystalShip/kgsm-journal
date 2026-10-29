@@ -114,6 +114,7 @@ public static class KgsmEventCatalog
         {
             "blueprint" => EventSubject.Blueprint,
             "library" => EventSubject.Library,
+            "dns" => EventSubject.Name,
             "host" => EventSubject.Host,
             "leaf" or "service" => EventSubject.Service,
             "user" or "identity" or "auth" => EventSubject.Account,
@@ -337,6 +338,22 @@ public static class KgsmEventCatalog
             // administration, and an instance whose library was deregistered is still on disk.
             LibraryEvent<LibraryAddedData>("library.added"),
             LibraryEvent<LibraryRemovedData>("library.removed"),
+
+            // The two library events kgsm-api writes because the engine is silent on them: a rename
+            // touches the registry and the marker and emits nothing, and a refused mutation exits
+            // non-zero and emits nothing. Both are facts; a refusal names the instances that blocked it.
+            new EventDescriptor("library.renamed", EventSubject.Library, EventWeight.Fact,
+                EventOutcome.Neutral, LibraryOutcomeFields, typeof(LibraryOutcomeEventData), Known: true),
+            new EventDescriptor("library.failed", EventSubject.Library, EventWeight.Fact,
+                EventOutcome.Failure, LibraryOutcomeFields, typeof(LibraryOutcomeEventData), Known: true),
+
+            // A name in the cluster's zone, as the DNS anchor journals it. Facts: whoever bookmarked or
+            // told players a name is affected when it appears or leaves, and the audit view must keep it.
+            // Publishing is the routine good news; a withdrawal is neutral, as the anchor writes it.
+            Dns<DnsNamePublishedData>("dns.name.published", EventOutcome.Success,
+                [Field("Type", FieldShape.Text), Field("Content", FieldShape.Text), Field("From", FieldShape.Text)]),
+            Dns<DnsNameWithdrawnData>("dns.name.withdrawn", EventOutcome.Neutral,
+                [Field("Reason", FieldShape.Text)]),
 
             // -- accounts ----------------------------------------------------------------------
             // Signing in and accounts changing. No engine command runs for any of them: the auth anchor,
@@ -585,6 +602,20 @@ public static class KgsmEventCatalog
         where TData : LibraryEventDataBase =>
         new(type, EventSubject.Library, EventWeight.Fact, EventOutcome.Neutral,
             [Field("Path", FieldShape.Text)], typeof(TData), Known: true);
+
+    /// <summary>A name-subject descriptor: something that happened to one name in the cluster's zone.</summary>
+    private static EventDescriptor Dns<TData>(string type, EventOutcome outcome, EventField[] extra)
+        where TData : DnsNameEventDataBase =>
+        new(type, EventSubject.Name, EventWeight.Fact, outcome,
+            [Field("Name", FieldShape.Text), Field("Kind", FieldShape.Text), Field("Member", FieldShape.Text),
+             Field("Key", FieldShape.Text), .. extra], typeof(TData), Known: true);
+
+    /// <summary>The fields both <c>library.renamed</c> and <c>library.failed</c> carry.</summary>
+    private static readonly EventField[] LibraryOutcomeFields =
+    [
+        Field("Verb", FieldShape.Text), Field("Path", FieldShape.Text), Field("NewName", FieldShape.Text),
+        Field("Error", FieldShape.Text), Field("ExitCode", FieldShape.Text),
+    ];
 
     /// <summary>An account-subject descriptor — something that happened to somebody's access.</summary>
     private static EventDescriptor Account<TData>(
@@ -1034,6 +1065,13 @@ public enum EventSubject
     /// being about a game server: a leaf can be reconfigured while every instance keeps running.
     /// </summary>
     Service,
+
+    /// <summary>
+    /// One name in the cluster's zone — published, moved, withdrawn. Never read as being about an
+    /// instance: a game's name points at a server without being something that server did, and a node's
+    /// own name belongs to no server.
+    /// </summary>
+    Name,
 
     /// <summary>
     /// The cluster's access model itself — a role, a permission, the catalog of what can be granted, a

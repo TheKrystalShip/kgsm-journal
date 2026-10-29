@@ -550,6 +550,72 @@ public class EventDeserializationTests
     }
 
     [Fact]
+    public void DnsNameEvents_ReadTheAnchorsRecords()
+    {
+        (_, KgsmEventDataBase? published) = DeserializeAny(
+            """{"V":2,"Id":"01a16a05-ef80-74c0-8bee-b363d11ca3c6","EventType":"dns.name.published","Data":{"Name":"corekeeper.play.thekrystalship.com","Kind":"game","Member":"hotrod","Key":"methlab","Type":"CNAME","Content":"walter.nodes.thekrystalship.com","From":null},"Timestamp":"2026-10-23T18:28:56.320Z","Actor":"system:dns","Origin":"system","Hostname":"hotrod","ProducerVersion":"0.18.0","Severity":"info","Outcome":"success","Summary":"published the game name"}""",
+            typeof(DnsNamePublishedData));
+        (_, KgsmEventDataBase? withdrawn) = DeserializeAny(
+            """{"V":2,"Id":"01a16a05-ef81-741f-86c8-0d8c4e8c1020","EventType":"dns.name.withdrawn","Data":{"Name":"auth.anchors.thekrystalship.com","Kind":"capability","Member":"hotrod-auth","Key":"auth","Reason":null},"Timestamp":"2026-10-23T18:28:56.321Z","Actor":"system:dns","Origin":"system","Hostname":"hotrod","ProducerVersion":"0.18.0","Severity":"warn","Outcome":"neutral","Summary":"withdrew the capability name"}""",
+            typeof(DnsNameWithdrawnData));
+
+        var p = Assert.IsType<DnsNamePublishedData>(published);
+        Assert.Equal("corekeeper.play.thekrystalship.com", p.Name);
+        Assert.Equal("game", p.Kind);
+        Assert.Equal("hotrod", p.Member);
+        Assert.Equal("methlab", p.Key);
+        Assert.Equal("CNAME", p.Type);
+        Assert.Equal("walter.nodes.thekrystalship.com", p.Content);
+        Assert.Null(p.From);
+        var w = Assert.IsType<DnsNameWithdrawnData>(withdrawn);
+        Assert.Equal("auth.anchors.thekrystalship.com", w.Name);
+        Assert.Equal("capability", w.Kind);
+        Assert.Null(w.Reason);
+
+        foreach (string type in new[] { "dns.name.published", "dns.name.withdrawn" })
+        {
+            EventDescriptor d = KgsmEventCatalog.Describe(type);
+            Assert.True(d.Known);
+            Assert.Equal(EventSubject.Name, d.Subject);
+            Assert.Equal(EventWeight.Fact, d.Weight);
+        }
+        Assert.Equal(EventOutcome.Success, KgsmEventCatalog.Describe("dns.name.published").Outcome);
+        Assert.Equal(EventOutcome.Neutral, KgsmEventCatalog.Describe("dns.name.withdrawn").Outcome);
+    }
+
+    [Fact]
+    public void LibraryOutcomeEvents_ReadTheRefusalAndTheRename()
+    {
+        (_, KgsmEventDataBase? failed) = DeserializeAny(
+            """{"V":2,"Id":"01a145bd-545b-7ce5-8863-30a392c9d223","EventType":"library.failed","Data":{"LibraryName":"default","Verb":"remove","Path":null,"NewName":null,"Error":"[ERROR] libraries.sh:479 Library 'default' holds instances:\n[ERROR] libraries.sh:483   minecraft","ExitCode":54},"Timestamp":"2026-10-16T17:23:18.235Z","Actor":"local:claude","Origin":"ui","Hostname":"hotrod","ProducerVersion":"0.220.0"}""",
+            typeof(LibraryOutcomeEventData));
+        (_, KgsmEventDataBase? renamed) = DeserializeAny(
+            """{"V":2,"Id":"01a145bd-545b-7ce5-8863-30a392c9d224","EventType":"library.renamed","Data":{"LibraryName":"default","Verb":"rename","Path":null,"NewName":"games","Error":null,"ExitCode":null},"Timestamp":"2026-10-16T17:23:18.235Z","Actor":"local:claude","Origin":"ui","Hostname":"hotrod","ProducerVersion":"0.220.0"}""",
+            typeof(LibraryOutcomeEventData));
+
+        var f = Assert.IsType<LibraryOutcomeEventData>(failed);
+        Assert.Equal("default", f.LibraryName);
+        Assert.Equal("remove", f.Verb);
+        Assert.Null(f.NewName);
+        Assert.Contains("holds instances", f.Error);
+        Assert.Equal(54, f.ExitCode);
+        var r = Assert.IsType<LibraryOutcomeEventData>(renamed);
+        Assert.Equal("games", r.NewName);
+        Assert.Null(r.Error);
+        Assert.Null(r.ExitCode);
+
+        foreach (string type in new[] { "library.renamed", "library.failed" })
+        {
+            EventDescriptor d = KgsmEventCatalog.Describe(type);
+            Assert.True(d.Known);
+            Assert.Equal(EventSubject.Library, d.Subject);
+            Assert.Equal(EventWeight.Fact, d.Weight);
+        }
+        Assert.Equal(EventOutcome.Failure, KgsmEventCatalog.Describe("library.failed").Outcome);
+        Assert.Equal(EventOutcome.Neutral, KgsmEventCatalog.Describe("library.renamed").Outcome);
+    }
+
+    [Fact]
     public void MovedEvent_IsClassifiedAsAnInstanceFact()
     {
         EventDescriptor descriptor = KgsmEventCatalog.Describe("server.moved");
