@@ -514,6 +514,22 @@ public static class KgsmEventCatalog
                 [Path, SizeBytes, Sha256]),
             Instance<BackupDownloadedEventData>("backup.downloaded", EventWeight.Fact, EventOutcome.Neutral,
                 [Field("BackupId", FieldShape.Text), SizeBytes, Sha256]),
+
+            // A transfer between nodes, as the API journals it: only the API sees both nodes. Each side
+            // writes its own half. The started line is named by the source's instance, because the server
+            // has no id on the arriving node yet, and a target's failed line leaves InstanceName empty
+            // for the same reason; neither payload may be read as naming a local server then.
+            new EventDescriptor("server.transfer.started", EventSubject.Instance, EventWeight.Phase,
+                EventOutcome.Neutral,
+                [TransferId, Field("SourceMember", FieldShape.Text), Field("SourceInstance", FieldShape.Text)],
+                typeof(TransferStartedEventData), Known: true),
+            Instance<TransferCompletedEventData>("server.transfer.completed", EventWeight.Fact,
+                EventOutcome.Success,
+                [TransferId, Field("TargetMember", FieldShape.Text), Field("TargetInstance", FieldShape.Text)]),
+            Instance<TransferFailedEventData>("server.transfer.failed", EventWeight.Fact,
+                EventOutcome.Failure,
+                [TransferId, Field("SourceInstance", FieldShape.Text), Field("Reason", FieldShape.Text),
+                 Field("Phase", FieldShape.Text)]),
         };
 
         var byType = new Dictionary<string, EventDescriptor>(all.Count, StringComparer.Ordinal);
@@ -784,6 +800,7 @@ public static class KgsmEventCatalog
 
     /// <summary>The content hash. Identifies the bytes; is not the bytes.</summary>
     private static readonly EventField Sha256 = Field("Sha256", FieldShape.Opaque);
+    private static readonly EventField TransferId = Field("TransferId", FieldShape.Opaque);
 
     /// <summary>The fields every <c>auth.*</c> session event carries.</summary>
     private static readonly EventField[] SessionFields =

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — transfer events in the catalog (`TheKrystalShip.KGSM.Lib` 9.4.0-dev.2)
+
+- **`server.transfer.started`, `server.transfer.completed` and `server.transfer.failed`** are in the
+  event catalog (`TransferStartedEventData`, `TransferCompletedEventData`, `TransferFailedEventData`),
+  registered in `KgsmJsonContext`. The API writes them to its own journal; without a catalog entry the
+  event service logged them as unknown and the host conformance check failed on a journal whose newest
+  line was one. The started line and a target's failed line name the source's instance and leave the
+  local instance empty.
+
 ### Added — instance transfer (`TheKrystalShip.KGSM.Lib` 9.4.0-dev.1)
 
 - **Streaming process execution.** `IProcessRunner.ExecuteStreamingAsync` copies a caller's `Stream` to

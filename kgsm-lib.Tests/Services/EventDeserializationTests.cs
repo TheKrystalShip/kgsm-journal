@@ -512,6 +512,34 @@ public class EventDeserializationTests
     }
 
     [Fact]
+    public void TransferEvents_ReadTheNodesEachHalf()
+    {
+        (_, KgsmEventDataBase? started) = DeserializeAny(
+            """{"V":1,"Id":"01a02c84-e4e4-7b57-b8ce-3483f2a61860","EventType":"server.transfer.started","Data":{"TransferId":"t-1","SourceMember":"walter","SourceInstance":"factorio-7f3a"},"Timestamp":"2026-10-29T10:00:00.000Z","Actor":"u1","Origin":"api","Hostname":"hotbox","ProducerVersion":"1.1.0"}""",
+            typeof(TransferStartedEventData));
+        (_, EventDataBase? completed) = Deserialize(
+            """{"V":1,"Id":"01a02c84-e4e4-7b57-b8ce-3483f2a61861","EventType":"server.transfer.completed","Data":{"TransferId":"t-1","InstanceName":"factorio-7f3a","TargetMember":"hotbox","TargetInstance":"factorio-91ab"},"Timestamp":"2026-10-29T10:00:00.000Z","Actor":"u1","Origin":"api","Hostname":"hotrod","ProducerVersion":"1.1.0"}""",
+            typeof(TransferCompletedEventData));
+        (_, EventDataBase? failedOnTarget) = Deserialize(
+            """{"V":1,"Id":"01a02c84-e4e4-7b57-b8ce-3483f2a61862","EventType":"server.transfer.failed","Data":{"TransferId":"t-1","SourceInstance":"factorio-7f3a","Reason":"no_room","Phase":"begin"},"Timestamp":"2026-10-29T10:00:00.000Z","Actor":"u1","Origin":"api","Hostname":"hotbox","ProducerVersion":"1.1.0"}""",
+            typeof(TransferFailedEventData));
+
+        var arriving = Assert.IsType<TransferStartedEventData>(started);
+        Assert.Equal("t-1", arriving.TransferId);
+        Assert.Equal("walter", arriving.SourceMember);
+        Assert.Equal("factorio-7f3a", arriving.SourceInstance);
+        var left = Assert.IsType<TransferCompletedEventData>(completed);
+        Assert.Equal("factorio-7f3a", left.InstanceName);
+        Assert.Equal("hotbox", left.TargetMember);
+        Assert.Equal("factorio-91ab", left.TargetInstance);
+        var failed = Assert.IsType<TransferFailedEventData>(failedOnTarget);
+        Assert.Equal(string.Empty, failed.InstanceName);
+        Assert.Equal("factorio-7f3a", failed.SourceInstance);
+        Assert.Equal("no_room", failed.Reason);
+        Assert.Equal("begin", failed.Phase);
+    }
+
+    [Fact]
     public void MovedEvent_IsClassifiedAsAnInstanceFact()
     {
         EventDescriptor descriptor = KgsmEventCatalog.Describe("server.moved");
