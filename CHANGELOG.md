@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — `dns.name.moved` in the catalog (`TheKrystalShip.KGSM.Lib` 9.4.0-dev.5)
+
+- **`dns.name.moved`** (the DNS anchor) with `DnsNameMovedData` (`Type`, `Content`, `From`) over
+  `DnsNameEventDataBase`. A name-subject fact, success outcome.
+
 ### Added — four events producers write, in the catalog (`TheKrystalShip.KGSM.Lib` 9.4.0-dev.4)
 
 - **`dns.name.published` and `dns.name.withdrawn`** (the DNS anchor) with `DnsNamePublishedData` and

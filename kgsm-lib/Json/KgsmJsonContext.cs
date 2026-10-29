@@ -186,6 +186,7 @@ namespace TheKrystalShip.KGSM;
 [JsonSerializable(typeof(LibraryRemovedData))]
 [JsonSerializable(typeof(LibraryOutcomeEventData))]
 [JsonSerializable(typeof(DnsNamePublishedData))]
+[JsonSerializable(typeof(DnsNameMovedData))]
 [JsonSerializable(typeof(DnsNameWithdrawnData))]
 [JsonSerializable(typeof(BlueprintCreatedData))]
 [JsonSerializable(typeof(BlueprintUpdatedData))]

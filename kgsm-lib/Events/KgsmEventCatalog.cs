@@ -352,6 +352,8 @@ public static class KgsmEventCatalog
             // Publishing is the routine good news; a withdrawal is neutral, as the anchor writes it.
             Dns<DnsNamePublishedData>("dns.name.published", EventOutcome.Success,
                 [Field("Type", FieldShape.Text), Field("Content", FieldShape.Text), Field("From", FieldShape.Text)]),
+            Dns<DnsNameMovedData>("dns.name.moved", EventOutcome.Success,
+                [Field("Type", FieldShape.Text), Field("Content", FieldShape.Text), Field("From", FieldShape.Text)]),
             Dns<DnsNameWithdrawnData>("dns.name.withdrawn", EventOutcome.Neutral,
                 [Field("Reason", FieldShape.Text)]),
 

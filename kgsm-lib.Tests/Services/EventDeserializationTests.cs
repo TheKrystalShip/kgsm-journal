@@ -584,6 +584,26 @@ public class EventDeserializationTests
     }
 
     [Fact]
+    public void DnsNameMoved_ReadsWhereTheRecordPointedBefore()
+    {
+        (_, KgsmEventDataBase? data) = DeserializeAny(
+            """{"V":2,"Id":"01a189f7-749a-7465-a1b9-7760be68539a","EventType":"dns.name.moved","Data":{"Name":"factorio.play.thekrystalship.com","Kind":"game","Member":"jessie","Key":"factorio","Type":"CNAME","Content":"jessie.nodes.thekrystalship.com","From":"walter.nodes.thekrystalship.com"},"Timestamp":"2026-10-29T23:20:58.266Z","Actor":"system:dns","Origin":"system","Hostname":"hotrod","ProducerVersion":"0.19.0","Severity":"info","Outcome":"success","Summary":"moved the game name"}""",
+            typeof(DnsNameMovedData));
+
+        var moved = Assert.IsType<DnsNameMovedData>(data);
+        Assert.Equal("factorio.play.thekrystalship.com", moved.Name);
+        Assert.Equal("jessie", moved.Member);
+        Assert.Equal("jessie.nodes.thekrystalship.com", moved.Content);
+        Assert.Equal("walter.nodes.thekrystalship.com", moved.From);
+
+        EventDescriptor d = KgsmEventCatalog.Describe("dns.name.moved");
+        Assert.True(d.Known);
+        Assert.Equal(EventSubject.Name, d.Subject);
+        Assert.Equal(EventWeight.Fact, d.Weight);
+        Assert.Equal(EventOutcome.Success, d.Outcome);
+    }
+
+    [Fact]
     public void LibraryOutcomeEvents_ReadTheRefusalAndTheRename()
     {
         (_, KgsmEventDataBase? failed) = DeserializeAny(

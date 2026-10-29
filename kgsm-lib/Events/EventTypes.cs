@@ -1300,6 +1300,21 @@ public class DnsNamePublishedData : DnsNameEventDataBase
 }
 
 /// <summary>
+/// Data for <c>dns.name.moved</c> — a name's record was corrected to what the registry says.
+/// </summary>
+public class DnsNameMovedData : DnsNameEventDataBase
+{
+    /// <summary>Gets or sets the record type.</summary>
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets what the record points at now.</summary>
+    public string Content { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets what the record pointed at before. Null when the anchor did not know.</summary>
+    public string? From { get; set; }
+}
+
+/// <summary>
 /// Data for <c>dns.name.withdrawn</c> — a name's record was deleted: the name was released, or can no
 /// longer be pointed anywhere.
 /// </summary>
