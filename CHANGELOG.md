@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — the arriving half of a transfer is a fact (`TheKrystalShip.KGSM.Lib` 9.4.0-dev.3)
+
+- **`server.transfer.started` weighs as a fact.** It is the target node's first line for an arriving
+  server and the only one that names the node it came from, so an audit view shows it.
+
 ### Added — transfer events in the catalog (`TheKrystalShip.KGSM.Lib` 9.4.0-dev.2)
 
 - **`server.transfer.started`, `server.transfer.completed` and `server.transfer.failed`** are in the

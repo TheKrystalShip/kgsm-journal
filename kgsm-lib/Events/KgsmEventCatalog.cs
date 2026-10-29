@@ -519,7 +519,7 @@ public static class KgsmEventCatalog
             // writes its own half. The started line is named by the source's instance, because the server
             // has no id on the arriving node yet, and a target's failed line leaves InstanceName empty
             // for the same reason; neither payload may be read as naming a local server then.
-            new EventDescriptor("server.transfer.started", EventSubject.Instance, EventWeight.Phase,
+            new EventDescriptor("server.transfer.started", EventSubject.Instance, EventWeight.Fact,
                 EventOutcome.Neutral,
                 [TransferId, Field("SourceMember", FieldShape.Text), Field("SourceInstance", FieldShape.Text)],
                 typeof(TransferStartedEventData), Known: true),

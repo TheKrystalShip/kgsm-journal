@@ -539,6 +539,16 @@ public class EventDeserializationTests
         Assert.Equal("begin", failed.Phase);
     }
 
+    [Theory]
+    [InlineData("server.transfer.started")]
+    [InlineData("server.transfer.completed")]
+    [InlineData("server.transfer.failed")]
+    public void TransferEvents_AreFacts(string type)
+    {
+        // An audit view drops phases; each half of a transfer is a node's record of it.
+        Assert.Equal(EventWeight.Fact, KgsmEventCatalog.Describe(type).Weight);
+    }
+
     [Fact]
     public void MovedEvent_IsClassifiedAsAnInstanceFact()
     {
