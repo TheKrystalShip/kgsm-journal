@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — instance transfer (`TheKrystalShip.KGSM.Lib` 9.4.0-dev.1)
+
+- **Streaming process execution.** `IProcessRunner.ExecuteStreamingAsync` copies a caller's `Stream` to
+  the process's stdin and its stdout to a caller's `Stream`, captures stderr under a cap, never buffers
+  a part whole, and kills the process tree on cancellation. `ExecuteWithInput` writes a small payload to
+  stdin and buffers the output. Both are on `IKgsmCommandExecutor` too. Both interfaces gained members.
+- **`IInstanceService` transfer verbs**, each `[Performs]` `server.export` or `server.import` and
+  carrying `actor`/`origin`: `ExportManifest`, `ExportPartAsync`, `CommitExport`, `Unlock`,
+  `ImportCheck`, `ImportBegin`, `ImportPartAsync`, `ImportFinish`, `ImportAbort`, `ImportList`; and
+  `IBlueprintService.BlueprintRequirements`.
+- **Records** registered in `KgsmJsonContext`: `TransferManifest` (snake_case, the engine's contract) with
+  `TransferInstance`, `TransferPort`, `TransferBlueprint`, `TransferPart`; `ImportVerdict` with
+  `ImportRefusal` and `ImportRefusalCodes`; `ImportBeginResult`; `ImportedInstance`; `StagedImport`;
+  `BlueprintRequirements`. `TransferExitCodes` names the engine's 59-64 and 25; `StreamResult` and
+  `TransferOutcome<T>` carry a verb's outcome.
+- **`KgsmActions.ServerExport` and `ServerImport`**, mirroring the engine's manifest.
+- **`WatchdogActionResult.Refusal`** with `WatchdogRefusals.NoRoom` and `InstanceLocked`.
+- **`server.exported` and `server.imported`** are in the event catalog (`InstanceExportedData`,
+  `InstanceImportedData`).
+
 ### Added — refused admin attempts (`TheKrystalShip.KGSM.Lib` 9.3.0)
 
 - **`auth.admin.refused` is in the catalog** (Failure, about an account), read into

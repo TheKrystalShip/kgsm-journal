@@ -493,6 +493,25 @@ public class EventDeserializationTests
     }
 
     [Fact]
+    public void TransferEvents_ReadIntoTheirDataTypes()
+    {
+        (string exportedType, EventDataBase? exported) = Deserialize(
+            """{"V":1,"Id":"01a02c84-e4e4-7b57-b8ce-3483f2a61850","EventType":"server.exported","Data":{"InstanceName":"factorio-7f3a"},"Timestamp":"2026-10-29T10:00:00.000Z","Actor":"u1","Origin":"api","Hostname":"hotrod","ProducerVersion":"3.18.0-rc34"}""",
+            typeof(InstanceExportedData));
+        (string importedType, EventDataBase? imported) = Deserialize(
+            """{"V":1,"Id":"01a02c84-e4e4-7b57-b8ce-3483f2a61851","EventType":"server.imported","Data":{"InstanceName":"factorio-91ab","Blueprint":"factorio","Library":"default"},"Timestamp":"2026-10-29T10:00:00.000Z","Actor":"u1","Origin":"api","Hostname":"hotbox","ProducerVersion":"3.18.0-rc34"}""",
+            typeof(InstanceImportedData));
+
+        Assert.Equal("server.exported", exportedType);
+        Assert.Equal("factorio-7f3a", Assert.IsType<InstanceExportedData>(exported).InstanceName);
+        Assert.Equal("server.imported", importedType);
+        var arrived = Assert.IsType<InstanceImportedData>(imported);
+        Assert.Equal("factorio-91ab", arrived.InstanceName);
+        Assert.Equal("factorio", arrived.Blueprint);
+        Assert.Equal("default", arrived.Library);
+    }
+
+    [Fact]
     public void MovedEvent_IsClassifiedAsAnInstanceFact()
     {
         EventDescriptor descriptor = KgsmEventCatalog.Describe("server.moved");

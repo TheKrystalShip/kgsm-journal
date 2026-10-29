@@ -241,4 +241,35 @@ public class KgsmCommandExecutor : IKgsmCommandExecutor
         return new KgsmResult(result);
     }
 
+    /// <inheritdoc/>
+    public KgsmResult ExecuteWithInput(IReadOnlyDictionary<string, string>? environment, TimeSpan timeout, string standardInput, params string[] args)
+    {
+        var commandName = string.Join(" ", args);
+        _logger.LogDebug("Executing KGSM command with stdin (timeout {Timeout}): {Command}", timeout, commandName);
+
+        ProcessResult result = _processRunner.ExecuteWithInput(_kgsmPath, timeout, environment, standardInput, args);
+
+        // A refusal is an answer the caller reads from the output, so only a failure that printed
+        // nothing is an error here.
+        if (result.ExitCode != 0)
+            _logger.LogDebug("Command exited {ExitCode}: {Command} - {Error}", result.ExitCode, commandName, result.Stderr);
+
+        return new KgsmResult(result);
+    }
+
+    /// <inheritdoc/>
+    public async Task<StreamResult> ExecuteStreamingAsync(IReadOnlyDictionary<string, string>? environment, Stream? input, Stream? output, string[] args, CancellationToken cancellationToken = default)
+    {
+        var commandName = string.Join(" ", args);
+        _logger.LogDebug("Executing KGSM command streaming: {Command}", commandName);
+
+        StreamResult result = await _processRunner
+            .ExecuteStreamingAsync(_kgsmPath, args, environment, input, output, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (result.ExitCode != 0)
+            _logger.LogError("Command failed: {Command} - {Error}", commandName, result.Stderr);
+
+        return result;
+    }
 }

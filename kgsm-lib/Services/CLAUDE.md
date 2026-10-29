@@ -14,6 +14,23 @@ if (result.ExitCode != 0) {
 }
 ```
 
+**Three execution shapes.** `Execute`/`ExecuteAsync` buffer all output. `ExecuteWithInput` writes a small
+text payload (a transfer manifest) to stdin and buffers the output, because the transfer verbs print a
+verdict on stdout even when they exit non-zero. `ExecuteStreamingAsync` is the bulk path: the caller's
+`Stream` is copied to stdin and stdout is copied to the caller's `Stream` in fixed-size chunks, stderr is
+captured under a cap, and nothing is held whole, since a transfer part can be tens of gigabytes. It has
+no timeout; cancelling the token kills the process tree and throws `OperationCanceledException`. A
+stream that fails kills the process and surfaces its own exception. The bytes written to the destination
+are data only when `StreamResult.ExitCode` is 0.
+
+**Transfer verbs** (`InstanceService`, `../Core/Models/InstanceTransfer.cs`): `ExportManifest`,
+`ExportPartAsync`, `CommitExport`, `Unlock`, `ImportCheck`, `ImportBegin`, `ImportPartAsync`,
+`ImportFinish`, `ImportAbort`, `ImportList`, and `IBlueprintService.BlueprintRequirements`. A verb that
+refuses reports it in the result's exit code (`TransferExitCodes`); `ImportCheck` and a refused
+`ImportBegin` carry the engine's verdict, whose `code` strings (`ImportRefusalCodes`) are what a caller
+branches on, with every refusal listed. A success whose output cannot be read throws `KgsmException`
+rather than returning an assumed value.
+
 `LogSubscriptionService` spawns a real `kgsm --follow` process; `LogParser` (`../Utilities/`) handles
 ISO8601 (Z suffix) and syslog formats differently.
 

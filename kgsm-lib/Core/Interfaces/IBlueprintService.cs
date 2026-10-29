@@ -125,4 +125,14 @@ public interface IBlueprintService
     /// </remarks>
     [Performs(KgsmActions.LibraryRead)]
     string? GetScaffold();
+
+    /// <summary>
+    /// Reads each requirement a blueprint declares and whether this host has it. The engine exits
+    /// non-zero when one is absent but still prints the answer; this reads it either way.
+    /// </summary>
+    /// <param name="blueprintName">Blueprint to ask about.</param>
+    /// <returns>The requirements, or <see langword="null"/> when the engine printed no answer (an unknown blueprint, an unreachable engine): unknown, never assumed present.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="blueprintName"/> is null or whitespace.</exception>
+    [Performs(KgsmActions.LibraryRead)]
+    BlueprintRequirements? BlueprintRequirements(string blueprintName);
 }

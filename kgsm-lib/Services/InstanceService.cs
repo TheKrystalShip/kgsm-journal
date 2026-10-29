@@ -1,7 +1,10 @@
 using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using TheKrystalShip.KGSM.Core.Interfaces;
 using TheKrystalShip.KGSM.Core.Models;
+using TheKrystalShip.KGSM.Exceptions;
 
 namespace TheKrystalShip.KGSM.Services;
 
@@ -168,6 +171,196 @@ public class InstanceService : IInstanceService
             ? _commandExecutor.Execute(_timeouts.Move, args.ToArray())
             : _commandExecutor.Execute(provenance, _timeouts.Move, args.ToArray());
     }
+
+    /// <inheritdoc/>
+    public TransferOutcome<TransferManifest> ExportManifest(string instanceName, string? lockToken = null, string? actor = null, string? origin = null)
+    {
+        ArgumentNullException.ThrowIfNull(instanceName, nameof(instanceName));
+
+        List<string> args = ["instances", "export", instanceName, "--manifest"];
+        if (lockToken is not null)
+        {
+            args.Add("--lock");
+            args.Add(lockToken);
+        }
+
+        KgsmResult result = Run(actor, origin, _timeouts.Default, args);
+        return Read(result, KgsmJsonContext.Default.TransferManifest);
+    }
+
+    /// <inheritdoc/>
+    public Task<StreamResult> ExportPartAsync(string instanceName, string partId, string lockToken, Stream destination, string? actor = null, string? origin = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(instanceName, nameof(instanceName));
+        ArgumentNullException.ThrowIfNull(partId, nameof(partId));
+        ArgumentNullException.ThrowIfNull(lockToken, nameof(lockToken));
+        ArgumentNullException.ThrowIfNull(destination, nameof(destination));
+
+        return _commandExecutor.ExecuteStreamingAsync(
+            KgsmProvenance.Build(actor, origin), null, destination,
+            ["instances", "export", instanceName, "--part", partId, "--lock", lockToken],
+            cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public KgsmResult CommitExport(string instanceName, string lockToken, string? actor = null, string? origin = null)
+    {
+        ArgumentNullException.ThrowIfNull(instanceName, nameof(instanceName));
+        ArgumentNullException.ThrowIfNull(lockToken, nameof(lockToken));
+
+        return Run(actor, origin, _timeouts.Uninstall, ["instances", "export", instanceName, "--commit", "--lock", lockToken]);
+    }
+
+    /// <inheritdoc/>
+    public KgsmResult Unlock(string instanceName, string? lockToken = null, bool force = false, string? actor = null, string? origin = null)
+    {
+        ArgumentNullException.ThrowIfNull(instanceName, nameof(instanceName));
+        if (lockToken is null && !force)
+            throw new ArgumentException("Unlock needs the lock token, or force.", nameof(lockToken));
+
+        List<string> args = ["instances", "unlock", instanceName];
+        if (force)
+        {
+            args.Add("--force");
+        }
+        else
+        {
+            args.Add("--lock");
+            args.Add(lockToken!);
+        }
+
+        return Run(actor, origin, _timeouts.Default, args);
+    }
+
+    /// <inheritdoc/>
+    public ImportVerdict ImportCheck(TransferManifest manifest, string? library = null, string? blueprintSuffix = null, string? actor = null, string? origin = null)
+    {
+        ArgumentNullException.ThrowIfNull(manifest, nameof(manifest));
+
+        KgsmResult result = RunWithManifest(manifest, ["instances", "import", "check", "--json"], library, blueprintSuffix, actor, origin);
+        return ReadVerdict(result) ?? throw Unreadable("import check", result);
+    }
+
+    /// <inheritdoc/>
+    public ImportBeginResult ImportBegin(TransferManifest manifest, string? library = null, string? blueprintSuffix = null, string? actor = null, string? origin = null)
+    {
+        ArgumentNullException.ThrowIfNull(manifest, nameof(manifest));
+
+        KgsmResult result = RunWithManifest(manifest, ["instances", "import", "begin", "--json"], library, blueprintSuffix, actor, origin);
+
+        // A refusal prints the verdict instead of the id and exits non-zero; the stdout is read first.
+        if (result.IsSuccess)
+        {
+            ImportBegun? begun = Deserialize(result.Stdout, KgsmJsonContext.Default.ImportBegun);
+            if (begun is not null && begun.ImportId.Length > 0)
+                return new ImportBeginResult(begun.ImportId, null);
+        }
+        else if (ReadVerdict(result) is { } verdict)
+        {
+            return new ImportBeginResult(null, verdict);
+        }
+
+        throw Unreadable("import begin", result);
+    }
+
+    /// <inheritdoc/>
+    public Task<StreamResult> ImportPartAsync(string importId, string partId, Stream source, string? actor = null, string? origin = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(importId, nameof(importId));
+        ArgumentNullException.ThrowIfNull(partId, nameof(partId));
+        ArgumentNullException.ThrowIfNull(source, nameof(source));
+
+        return _commandExecutor.ExecuteStreamingAsync(
+            KgsmProvenance.Build(actor, origin), source, null,
+            ["instances", "import", "part", importId, partId],
+            cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public TransferOutcome<ImportedInstance> ImportFinish(string importId, string? actor = null, string? origin = null)
+    {
+        ArgumentNullException.ThrowIfNull(importId, nameof(importId));
+
+        // Finishing installs and starts the instance once, so it takes an install's time.
+        KgsmResult result = Run(actor, origin, _timeouts.Install, ["instances", "import", "finish", importId, "--json"]);
+        return Read(result, KgsmJsonContext.Default.ImportedInstance);
+    }
+
+    /// <inheritdoc/>
+    public KgsmResult ImportAbort(string importId, string? actor = null, string? origin = null)
+    {
+        ArgumentNullException.ThrowIfNull(importId, nameof(importId));
+
+        return Run(actor, origin, _timeouts.Default, ["instances", "import", "abort", importId]);
+    }
+
+    /// <inheritdoc/>
+    public TransferOutcome<List<StagedImport>> ImportList()
+    {
+        KgsmResult result = _commandExecutor.Execute(["instances", "import", "list", "--json"]);
+        return Read(result, KgsmJsonContext.Default.ListStagedImport);
+    }
+
+    private KgsmResult Run(string? actor, string? origin, TimeSpan timeout, List<string> args)
+    {
+        IReadOnlyDictionary<string, string>? provenance = KgsmProvenance.Build(actor, origin);
+        return provenance is null
+            ? _commandExecutor.Execute(timeout, args.ToArray())
+            : _commandExecutor.Execute(provenance, timeout, args.ToArray());
+    }
+
+    private KgsmResult RunWithManifest(TransferManifest manifest, List<string> args, string? library, string? blueprintSuffix, string? actor, string? origin)
+    {
+        if (library is not null)
+        {
+            args.Add("--library");
+            args.Add(library);
+        }
+
+        if (blueprintSuffix is not null)
+        {
+            args.Add("--blueprint-suffix");
+            args.Add(blueprintSuffix);
+        }
+
+        string json = JsonSerializer.Serialize(manifest, KgsmJsonContext.Default.TransferManifest);
+        return _commandExecutor.ExecuteWithInput(KgsmProvenance.Build(actor, origin), _timeouts.Default, json, args.ToArray());
+    }
+
+    private static TransferOutcome<T> Read<T>(KgsmResult result, JsonTypeInfo<T> typeInfo) where T : class
+    {
+        if (!result.IsSuccess)
+            return new TransferOutcome<T>(result, null);
+
+        T? value = Deserialize(result.Stdout, typeInfo);
+        return value is null
+            ? throw new KgsmException($"The engine exited 0 but printed nothing readable as {typeof(T).Name}: {Excerpt(result.Stdout)}")
+            : new TransferOutcome<T>(result, value);
+    }
+
+    // The verdict's "ok" is required on the wire, so an import id or any other object is not read as one.
+    private static ImportVerdict? ReadVerdict(KgsmResult result) =>
+        Deserialize(result.Stdout, KgsmJsonContext.Default.ImportVerdict);
+
+    private static T? Deserialize<T>(string json, JsonTypeInfo<T> typeInfo) where T : class
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return null;
+
+        try
+        {
+            return JsonSerializer.Deserialize(json, typeInfo);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static KgsmException Unreadable(string verb, KgsmResult result) =>
+        new($"kgsm {verb} exited {result.ExitCode} without a readable answer: {Excerpt(string.IsNullOrWhiteSpace(result.Stderr) ? result.Stdout : result.Stderr)}");
+
+    private static string Excerpt(string text) => text.Length <= 300 ? text : text[..300] + "...";
 
     /// <inheritdoc/>
     public ICollection<string> GetLogs(string instanceName, int lines = 10)

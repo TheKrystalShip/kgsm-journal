@@ -246,4 +246,30 @@ public class BlueprintService : IBlueprintService
             return null;
         }
     }
+
+    /// <inheritdoc/>
+    public BlueprintRequirements? BlueprintRequirements(string blueprintName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(blueprintName, nameof(blueprintName));
+
+        // Probe: an absent requirement exits non-zero and still prints the answer worth reading.
+        KgsmResult result = _commandExecutor.Probe("blueprints", "requirements", blueprintName, "--json");
+
+        if (string.IsNullOrWhiteSpace(result.Stdout))
+        {
+            _logger.LogWarning("Blueprint requirements for {Blueprint} returned no answer (exit {ExitCode}): {Error}",
+                blueprintName, result.ExitCode, result.Stderr);
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize(result.Stdout, KgsmJsonContext.Default.BlueprintRequirements);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to deserialize requirements for blueprint {Blueprint}", blueprintName);
+            return null;
+        }
+    }
 }

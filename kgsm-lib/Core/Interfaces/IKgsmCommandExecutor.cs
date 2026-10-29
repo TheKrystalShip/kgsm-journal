@@ -95,4 +95,26 @@ public interface IKgsmCommandExecutor
     /// <param name="args">The command arguments to pass to KGSM.</param>
     /// <returns>A KgsmResult containing the command output and exit code.</returns>
     KgsmResult Probe(params string[] args);
+
+    /// <summary>
+    /// Runs a KGSM command that reads a small payload on stdin (a transfer manifest), buffering the
+    /// output. A non-zero exit is returned, not thrown: the transfer verbs print a verdict on stdout
+    /// even when they refuse.
+    /// </summary>
+    /// <param name="environment">Provenance variables, or null.</param>
+    /// <param name="timeout">Maximum time to wait for the process to exit.</param>
+    /// <param name="standardInput">The text written to stdin.</param>
+    /// <param name="args">The KGSM arguments.</param>
+    KgsmResult ExecuteWithInput(IReadOnlyDictionary<string, string>? environment, TimeSpan timeout, string standardInput, params string[] args);
+
+    /// <summary>
+    /// Runs a KGSM command whose stdin and stdout are the caller's streams, copied as they flow and
+    /// never buffered whole (a transfer part, tens of gigabytes). Cancelling kills the process tree.
+    /// </summary>
+    /// <param name="environment">Provenance variables, or null.</param>
+    /// <param name="input">Copied to the command's stdin; null leaves it empty.</param>
+    /// <param name="output">Receives the command's stdout; null discards it.</param>
+    /// <param name="args">The KGSM arguments.</param>
+    /// <param name="cancellationToken">Cancelling kills the process and throws <see cref="OperationCanceledException"/>.</param>
+    Task<StreamResult> ExecuteStreamingAsync(IReadOnlyDictionary<string, string>? environment, Stream? input, Stream? output, string[] args, CancellationToken cancellationToken = default);
 }

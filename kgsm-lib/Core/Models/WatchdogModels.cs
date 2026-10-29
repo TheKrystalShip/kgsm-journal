@@ -30,6 +30,23 @@ public record class WatchdogActionResult
     /// <summary>Human-readable detail describing the outcome.</summary>
     [JsonPropertyName("message")]
     public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Which kind of refusal this is, when it is one: a value of <see cref="WatchdogRefusals"/>, null
+    /// otherwise. <see cref="Message"/> is prose and free to be reworded; a caller branches on this.
+    /// </summary>
+    [JsonPropertyName("refusal"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Refusal { get; set; }
+}
+
+/// <summary>The refusal kinds <see cref="WatchdogActionResult.Refusal"/> can carry.</summary>
+public static class WatchdogRefusals
+{
+    /// <summary>The node has no room for the instance to start.</summary>
+    public const string NoRoom = "no_room";
+
+    /// <summary>The instance is locked for a transfer and does not start.</summary>
+    public const string InstanceLocked = "instance_locked";
 }
 
 /// <summary>

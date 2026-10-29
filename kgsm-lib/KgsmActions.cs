@@ -47,6 +47,12 @@ public static class KgsmActions
     /// <summary>Move a server to another library. Instance scope.</summary>
     public const string ServerMove = "kgsm:server.move";
 
+    /// <summary>Transfer a server out of this node to another: export, commit and unlock. Instance scope.</summary>
+    public const string ServerExport = "kgsm:server.export";
+
+    /// <summary>Transfer servers into this node: check, begin, receive parts, finish and abort. Node scope.</summary>
+    public const string ServerImport = "kgsm:server.import";
+
     /// <summary>Read a server's console and logs. Instance scope.</summary>
     public const string ServerConsoleRead = "kgsm:server.console.read";
 

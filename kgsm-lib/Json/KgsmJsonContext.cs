@@ -50,6 +50,14 @@ namespace TheKrystalShip.KGSM;
 [JsonSerializable(typeof(PortConflict))]
 [JsonSerializable(typeof(List<PortConflict>))]
 [JsonSerializable(typeof(List<string>))]
+// --- Instance transfer (the manifest and the import verbs' answers) ---
+[JsonSerializable(typeof(TransferManifest))]
+[JsonSerializable(typeof(ImportVerdict))]
+[JsonSerializable(typeof(ImportBegun))]
+[JsonSerializable(typeof(ImportedInstance))]
+[JsonSerializable(typeof(StagedImport))]
+[JsonSerializable(typeof(List<StagedImport>))]
+[JsonSerializable(typeof(BlueprintRequirements))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
 // --- kgsm-watchdog control-surface DTOs (typed client over the unix socket) ---
 [JsonSerializable(typeof(WatchdogActionResult))]
@@ -98,6 +106,8 @@ namespace TheKrystalShip.KGSM;
 [JsonSerializable(typeof(InstanceInstallationFinishedData))]
 [JsonSerializable(typeof(InstanceInstalledData))]
 [JsonSerializable(typeof(InstanceMovedData))]
+[JsonSerializable(typeof(InstanceExportedData))]
+[JsonSerializable(typeof(InstanceImportedData))]
 [JsonSerializable(typeof(InstanceStartedData))]
 [JsonSerializable(typeof(InstanceStoppedData))]
 [JsonSerializable(typeof(InstanceRestartedData))]

@@ -495,6 +495,30 @@ public class InstanceInstalledData : EventDataBase
 }
 
 /// <summary>
+/// Event data for when an instance left this host in a transfer: another machine holds it, and its
+/// files, backups and registry entry here are gone.
+/// </summary>
+public class InstanceExportedData : EventDataBase
+{
+}
+
+/// <summary>
+/// Event data for when an instance arrived from another host in a transfer, under a fresh id.
+/// </summary>
+public class InstanceImportedData : EventDataBase
+{
+    /// <summary>
+    /// Gets or sets the blueprint the imported instance runs.
+    /// </summary>
+    public string Blueprint { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the name of the library the instance landed in.
+    /// </summary>
+    public string Library { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Event data for when an instance's files were moved into a different library.
 /// </summary>
 /// <remarks>

@@ -187,6 +187,11 @@ public static class KgsmEventCatalog
             Instance<InstanceMovedData>("server.moved", EventWeight.Fact, EventOutcome.Neutral,
                 [Field("FromLibrary", FieldShape.Text), Field("ToLibrary", FieldShape.Text)]),
 
+            // A transfer between nodes. The instance leaves one host and arrives on another under a
+            // fresh id; each side states its own half, and neither is a failure.
+            Instance<InstanceExportedData>("server.exported", EventWeight.Fact, EventOutcome.Neutral),
+            Instance<InstanceImportedData>("server.imported", EventWeight.Fact, EventOutcome.Success, [Blueprint, LibraryName]),
+
             // -- uninstall ---------------------------------------------------------------------
             Instance<InstanceUninstallStartedData>("server.uninstall.started", EventWeight.Phase),
             Instance<InstanceUninstallFinishedData>("server.uninstall.finished", EventWeight.Phase),

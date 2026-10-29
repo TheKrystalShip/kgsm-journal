@@ -162,6 +162,129 @@ public interface IInstanceService
     [Performs(KgsmActions.ServerMove)]
     KgsmResult Move(string instanceName, string library, bool skipSpaceCheck = false, string? actor = null, string? origin = null);
 
+    // ── Transfer between nodes ────────────────────────────────────────────────
+    //
+    // The source holds a lock token for the whole transfer: ExportManifest takes the lock, every part
+    // and the commit name it, Unlock releases it. The target stages: ImportBegin, one ImportPartAsync
+    // per part, ImportFinish; ImportAbort undoes a staged import. Refusals are the engine's, in its
+    // exit codes (TransferExitCodes) and, for an import, in the verdict's codes (ImportRefusalCodes).
+
+    /// <summary>
+    /// Reads an instance's manifest and, with <paramref name="lockToken"/>, takes the transfer lock first
+    /// (or confirms it already holds that token). The lock disables the instance's autostart and makes
+    /// the watchdog refuse to start it.
+    /// </summary>
+    /// <param name="instanceName">Instance to export.</param>
+    /// <param name="lockToken">The caller's lock token; null reads the manifest without locking.</param>
+    /// <param name="actor">Optional audit principal — see <see cref="Install"/>.</param>
+    /// <param name="origin">Optional driving surface — see <see cref="Install"/>.</param>
+    /// <returns>The manifest, or the refusal: <see cref="TransferExitCodes.InstanceLocked"/> when another token holds the lock, <see cref="TransferExitCodes.NotFound"/> for an unknown instance, and the engine's codes for a running instance or an offline library.</returns>
+    /// <exception cref="TheKrystalShip.KGSM.Exceptions.KgsmException">The engine succeeded but printed a manifest this library cannot read.</exception>
+    [Performs(KgsmActions.ServerExport)]
+    TransferOutcome<TransferManifest> ExportManifest(string instanceName, string? lockToken = null, string? actor = null, string? origin = null);
+
+    /// <summary>
+    /// Streams one part of a locked instance into <paramref name="destination"/>: the tree as a POSIX
+    /// tar, an image as <c>docker save</c> writes it. Nothing is buffered whole.
+    /// </summary>
+    /// <param name="instanceName">Instance being exported.</param>
+    /// <param name="partId">A part id from the manifest.</param>
+    /// <param name="lockToken">The token that holds the lock.</param>
+    /// <param name="destination">Receives the bytes. They are data only when the result succeeded.</param>
+    /// <param name="actor">Optional audit principal — see <see cref="Install"/>.</param>
+    /// <param name="origin">Optional driving surface — see <see cref="Install"/>.</param>
+    /// <param name="cancellationToken">Cancelling kills the engine process and throws <see cref="OperationCanceledException"/>.</param>
+    [Performs(KgsmActions.ServerExport)]
+    Task<StreamResult> ExportPartAsync(string instanceName, string partId, string lockToken, Stream destination, string? actor = null, string? origin = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes the exported instance as an uninstall does and emits <c>server.exported</c>. Called after
+    /// the target has finished the import.
+    /// </summary>
+    /// <param name="instanceName">Instance to remove.</param>
+    /// <param name="lockToken">The token that holds the lock.</param>
+    /// <param name="actor">Optional audit principal — see <see cref="Install"/>.</param>
+    /// <param name="origin">Optional driving surface — see <see cref="Install"/>.</param>
+    [Performs(KgsmActions.ServerExport)]
+    KgsmResult CommitExport(string instanceName, string lockToken, string? actor = null, string? origin = null);
+
+    /// <summary>
+    /// Releases the transfer lock and restores the autostart flag. Unlocking an unlocked instance succeeds.
+    /// </summary>
+    /// <param name="instanceName">Instance to unlock.</param>
+    /// <param name="lockToken">The token that holds the lock; required unless <paramref name="force"/>.</param>
+    /// <param name="force">Release the lock whatever token holds it.</param>
+    /// <param name="actor">Optional audit principal — see <see cref="Install"/>.</param>
+    /// <param name="origin">Optional driving surface — see <see cref="Install"/>.</param>
+    /// <exception cref="ArgumentException">Neither a token nor <paramref name="force"/> was given.</exception>
+    [Performs(KgsmActions.ServerExport)]
+    KgsmResult Unlock(string instanceName, string? lockToken = null, bool force = false, string? actor = null, string? origin = null);
+
+    /// <summary>
+    /// The target's preflight for a manifest: every refusal at once, nothing written.
+    /// </summary>
+    /// <param name="manifest">The source's manifest.</param>
+    /// <param name="library">Target library; null takes the engine's default.</param>
+    /// <param name="blueprintSuffix">Label for a travelling custom blueprint that collides with a different one of the same name.</param>
+    /// <param name="actor">Optional audit principal — see <see cref="Install"/>.</param>
+    /// <param name="origin">Optional driving surface — see <see cref="Install"/>.</param>
+    /// <returns>The verdict, read from the engine's output whether it exited 0 or not.</returns>
+    /// <exception cref="TheKrystalShip.KGSM.Exceptions.KgsmException">The engine printed no verdict.</exception>
+    [Performs(KgsmActions.ServerImport)]
+    ImportVerdict ImportCheck(TransferManifest manifest, string? library = null, string? blueprintSuffix = null, string? actor = null, string? origin = null);
+
+    /// <summary>
+    /// Runs the preflight and, when it passes, stages an import.
+    /// </summary>
+    /// <param name="manifest">The source's manifest.</param>
+    /// <param name="library">Target library; null takes the engine's default.</param>
+    /// <param name="blueprintSuffix">See <see cref="ImportCheck"/>.</param>
+    /// <param name="actor">Optional audit principal — see <see cref="Install"/>.</param>
+    /// <param name="origin">Optional driving surface — see <see cref="Install"/>.</param>
+    /// <returns>The import id, or the verdict that refused it.</returns>
+    /// <exception cref="TheKrystalShip.KGSM.Exceptions.KgsmException">The engine printed neither an import id nor a verdict.</exception>
+    [Performs(KgsmActions.ServerImport)]
+    ImportBeginResult ImportBegin(TransferManifest manifest, string? library = null, string? blueprintSuffix = null, string? actor = null, string? origin = null);
+
+    /// <summary>
+    /// Streams one part from <paramref name="source"/> into a staged import. A part sent again restarts
+    /// from nothing. A failed or cancelled part leaves the staging for <see cref="ImportAbort"/>.
+    /// </summary>
+    /// <param name="importId">The id from <see cref="ImportBegin"/>.</param>
+    /// <param name="partId">A part id from the manifest.</param>
+    /// <param name="source">The part's bytes.</param>
+    /// <param name="actor">Optional audit principal — see <see cref="Install"/>.</param>
+    /// <param name="origin">Optional driving surface — see <see cref="Install"/>.</param>
+    /// <param name="cancellationToken">Cancelling kills the engine process and throws <see cref="OperationCanceledException"/>.</param>
+    /// <returns>Exit <see cref="TransferExitCodes.TransferIntegrity"/> for a tar that cannot be extracted or an image id that differs, <see cref="TransferExitCodes.ImportNotFound"/> for an unknown import, <see cref="TransferExitCodes.NotFound"/> for a part the manifest does not list.</returns>
+    [Performs(KgsmActions.ServerImport)]
+    Task<StreamResult> ImportPartAsync(string importId, string partId, Stream source, string? actor = null, string? origin = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Verifies every part arrived, installs the instance and starts it once when it had run, emitting
+    /// <c>server.imported</c>. A failure inside undoes what it did and leaves the staging for abort.
+    /// </summary>
+    /// <param name="importId">The id from <see cref="ImportBegin"/>.</param>
+    /// <param name="actor">Optional audit principal — see <see cref="Install"/>.</param>
+    /// <param name="origin">Optional driving surface — see <see cref="Install"/>.</param>
+    /// <exception cref="TheKrystalShip.KGSM.Exceptions.KgsmException">The engine succeeded but printed an answer this library cannot read.</exception>
+    [Performs(KgsmActions.ServerImport)]
+    TransferOutcome<ImportedInstance> ImportFinish(string importId, string? actor = null, string? origin = null);
+
+    /// <summary>
+    /// Removes a staged import and every image it loaded that the host did not hold before. An unknown id succeeds.
+    /// </summary>
+    /// <param name="importId">The import to abort.</param>
+    /// <param name="actor">Optional audit principal — see <see cref="Install"/>.</param>
+    /// <param name="origin">Optional driving surface — see <see cref="Install"/>.</param>
+    [Performs(KgsmActions.ServerImport)]
+    KgsmResult ImportAbort(string importId, string? actor = null, string? origin = null);
+
+    /// <summary>Lists every staged import on this node.</summary>
+    /// <exception cref="TheKrystalShip.KGSM.Exceptions.KgsmException">The engine succeeded but printed an answer this library cannot read.</exception>
+    [Performs(KgsmActions.ServerImport)]
+    TransferOutcome<List<StagedImport>> ImportList();
+
     /// <summary>
     /// Gets the logs for an instance.
     /// </summary>

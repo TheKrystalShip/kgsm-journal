@@ -45,6 +45,16 @@ public class ProcessRunner : IProcessRunner
 
     /// <inheritdoc/>
     public ProcessResult Execute(string command, TimeSpan timeout, IReadOnlyDictionary<string, string>? environment, string[] args)
+        => ExecuteBuffered(command, timeout, environment, null, args);
+
+    /// <inheritdoc/>
+    public ProcessResult ExecuteWithInput(string command, TimeSpan timeout, IReadOnlyDictionary<string, string>? environment, string standardInput, string[] args)
+    {
+        ArgumentNullException.ThrowIfNull(standardInput, nameof(standardInput));
+        return ExecuteBuffered(command, timeout, environment, standardInput, args);
+    }
+
+    private ProcessResult ExecuteBuffered(string command, TimeSpan timeout, IReadOnlyDictionary<string, string>? environment, string? standardInput, string[] args)
     {
         ArgumentNullException.ThrowIfNull(command, nameof(command));
 
@@ -58,6 +68,7 @@ public class ProcessRunner : IProcessRunner
             UseShellExecute = false,
             RedirectStandardError = true,
             RedirectStandardOutput = true,
+            RedirectStandardInput = standardInput is not null,
             CreateNoWindow = true,
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8
@@ -127,6 +138,20 @@ public class ProcessRunner : IProcessRunner
 
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
+
+                if (standardInput is not null)
+                {
+                    // Output is already draining, so a payload larger than the pipe cannot deadlock.
+                    // A process that exits without reading it closes the pipe; its exit code is the answer.
+                    try
+                    {
+                        process.StandardInput.Write(standardInput);
+                        process.StandardInput.Close();
+                    }
+                    catch (IOException)
+                    {
+                    }
+                }
 
                 // Wait for process to exit with timeout
                 int timeoutMs = ToMilliseconds(timeout);
@@ -337,5 +362,163 @@ public class ProcessRunner : IProcessRunner
                 return new ProcessResult(EXIT_CODE_FAILURE, string.Empty, ex.Message);
             }
         }
+    }
+
+    /// <summary>Largest stderr kept from a streaming run; the rest is read and dropped.</summary>
+    private const int MaxStreamingStderrChars = 64 * 1024;
+
+    /// <summary>Size of the buffer a stream is copied through.</summary>
+    private const int StreamCopyBufferBytes = 128 * 1024;
+
+    /// <inheritdoc/>
+    public async Task<StreamResult> ExecuteStreamingAsync(
+        string command,
+        string[] args,
+        IReadOnlyDictionary<string, string>? environment,
+        Stream? input,
+        Stream? output,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(command, nameof(command));
+
+        string arguments = string.Join(" ", args);
+        _logger.LogDebug("Executing streaming command: {Command} {Arguments}", command, arguments);
+
+        ProcessStartInfo startInfo = new()
+        {
+            FileName = command,
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+            StandardErrorEncoding = Encoding.UTF8
+        };
+
+        foreach (string arg in args)
+            startInfo.ArgumentList.Add(arg);
+
+        if (environment is not null)
+        {
+            foreach (KeyValuePair<string, string> variable in environment)
+                startInfo.Environment[variable.Key] = variable.Value;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Process process;
+        try
+        {
+            process = Process.Start(startInfo) ?? throw new InvalidOperationException("Process failed to start");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start process: {Command} {Arguments}", command, arguments);
+            return new StreamResult(EXIT_CODE_FAILURE, ex.Message);
+        }
+
+        using (process)
+        {
+            // Linked so a failed copy stops the process too, not only the caller's token.
+            using CancellationTokenSource stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            using CancellationTokenRegistration kill = stop.Token.Register(() => Kill(process, command, arguments));
+
+            Task<string> stderrTask = ReadCappedAsync(process.StandardError);
+            Task inputTask = PumpInputAsync(process, input, stop.Token);
+            Task outputTask = PumpOutputAsync(process, output, stop.Token);
+
+            try
+            {
+                await Task.WhenAll(inputTask, outputTask).ConfigureAwait(false);
+                await process.WaitForExitAsync(stop.Token).ConfigureAwait(false);
+            }
+            catch
+            {
+                await stop.CancelAsync().ConfigureAwait(false);
+                try
+                {
+                    await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (InvalidOperationException)
+                {
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                throw;
+            }
+
+            string stderr = await stderrTask.ConfigureAwait(false);
+            if (process.ExitCode != 0)
+                _logger.LogWarning("Streaming command failed with exit code {ExitCode}: {Command} {Arguments}", process.ExitCode, command, arguments);
+
+            return new StreamResult(process.ExitCode, stderr);
+        }
+    }
+
+    private void Kill(Process process, string command, string arguments)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                _logger.LogWarning("Process cancelled: {Command} {Arguments}", command, arguments);
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to kill process: {Command} {Arguments}", command, arguments);
+        }
+    }
+
+    /// <summary>
+    /// Copies the caller's stream into the process and closes its stdin. A process that exits without
+    /// reading everything closes the pipe; that is its exit code's business, not a copy failure.
+    /// </summary>
+    private static async Task PumpInputAsync(Process process, Stream? input, CancellationToken ct)
+    {
+        try
+        {
+            if (input is not null)
+                await input.CopyToAsync(process.StandardInput.BaseStream, StreamCopyBufferBytes, ct).ConfigureAwait(false);
+
+            await process.StandardInput.BaseStream.FlushAsync(ct).ConfigureAwait(false);
+        }
+        catch (IOException)
+        {
+        }
+        finally
+        {
+            try
+            {
+                process.StandardInput.Close();
+            }
+            catch (IOException)
+            {
+            }
+        }
+    }
+
+    private static async Task PumpOutputAsync(Process process, Stream? output, CancellationToken ct)
+    {
+        Stream destination = output ?? Stream.Null;
+        await process.StandardOutput.BaseStream.CopyToAsync(destination, StreamCopyBufferBytes, ct).ConfigureAwait(false);
+        await destination.FlushAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Reads a stream to its end, keeping only the first <see cref="MaxStreamingStderrChars"/> characters.</summary>
+    private static async Task<string> ReadCappedAsync(StreamReader reader)
+    {
+        StringBuilder kept = new();
+        char[] buffer = new char[4096];
+        int read;
+        while ((read = await reader.ReadAsync(buffer.AsMemory()).ConfigureAwait(false)) > 0)
+        {
+            int room = MaxStreamingStderrChars - kept.Length;
+            if (room > 0)
+                kept.Append(buffer, 0, Math.Min(read, room));
+        }
+
+        return kept.ToString().Trim();
     }
 }
