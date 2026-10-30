@@ -56,8 +56,7 @@ public static class JournalLayout
     /// The inverse of <see cref="DirectoryFor"/>, and deliberately as strict as the scan that finds
     /// journals on a host: the last path segment has to be <see cref="Subdirectory"/>, the one before
     /// it has to be a usable producer id, and it has to be <see cref="JournalProducer.IsScanned"/> — a
-    /// scan narrowed to the ecosystem's and the organization's own state directories never reaches
-    /// anything else.
+    /// scan narrowed to the ecosystem's own state directories never reaches anything else.
     /// </para>
     /// <para>
     /// Null means <b>no reader will attribute a line here to any producer</b>, which is the answer a

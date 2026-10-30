@@ -47,7 +47,6 @@ public sealed class JournalConformanceTests : IDisposable
     [InlineData("kgsm-api")]
     [InlineData("kgsm-watchdog")]
     [InlineData("kgsm-firewall")]
-    [InlineData("tks-auth")]
     public void ProducerOf_InvertsDirectoryFor(string producer)
     {
         // The whole point of having one rule: what the writer composes is what the reader derives.
@@ -80,7 +79,7 @@ public sealed class JournalConformanceTests : IDisposable
     [InlineData("/var/lib/kgsm-api/journal")]      // not the journal subdirectory
     [InlineData("/var/lib/kgsm-api")]              // the state directory itself
     [InlineData("/var/lib/postgres/events")]       // outside this ecosystem, so outside the scan
-    [InlineData("/var/lib/tks/events")]            // the organization's prefix is "tks-", dash included
+    [InlineData("/var/lib/tks-auth/events")]       // not an ecosystem component
     [InlineData("/var/lib/KGSM-Api/events")]       // not a usable producer id
     [InlineData("")]
     [InlineData(null)]
@@ -338,10 +337,8 @@ public sealed class JournalConformanceTests : IDisposable
     }
 
     [Fact]
-    public void Discovery_FindsTheOrganizationsServicesBesideTheEcosystems()
+    public void Discovery_FindsTheEcosystemsJournalsAndNothingElse()
     {
-        // tks-auth records what happened to the cluster's accounts; a scan blind to it shows an audit
-        // with every sign-in missing and no sign that anything is.
         Directory.CreateDirectory(Path.Combine(_root, "kgsm-api", "events"));
         Directory.CreateDirectory(Path.Combine(_root, "tks-auth", "events"));
         Directory.CreateDirectory(Path.Combine(_root, "postgres", "events"));
@@ -350,7 +347,7 @@ public sealed class JournalConformanceTests : IDisposable
             Path.Combine(_root, "kgsm", "events"), _root, NullLogger<JournalDiscovery>.Instance);
 
         Assert.Equal(
-            ["kgsm", "kgsm-api", "tks-auth"],
+            ["kgsm", "kgsm-api"],
             discovery.Discover().Select(s => s.Producer).ToArray());
     }
 

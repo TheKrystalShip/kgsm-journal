@@ -29,17 +29,10 @@ public static class JournalProducer
     public const string EcosystemPrefix = Kgsm + "-";
 
     /// <summary>
-    /// The prefix the organization's own services carry: the ones KGSM runs beside and reads, such as
-    /// <c>tks-auth</c>, which is not a KGSM component and records what happened to the cluster's
-    /// accounts.
-    /// </summary>
-    public const string OrganizationPrefix = "tks-";
-
-    /// <summary>
     /// The beginnings of the state directories a reader scans: the engine and this ecosystem's
-    /// components, and the organization's services.
+    /// components.
     /// </summary>
-    public static IReadOnlyList<string> ScannedPrefixes { get; } = [Kgsm, OrganizationPrefix];
+    public static IReadOnlyList<string> ScannedPrefixes { get; } = [Kgsm];
 
     /// <summary>
     /// Whether a reader scanning a state root finds <paramref name="producer"/>'s journal at all.
