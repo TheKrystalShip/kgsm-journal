@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed — a reader scans the ecosystem's journals only (`TheKrystalShip.KGSM.Lib` 9.5.0-dev.1)
+### Changed — a reader scans the ecosystem's journals only (`TheKrystalShip.KGSM.Lib` 9.5.0-dev.2, `TheKrystalShip.KGSM.Journal` 2.5.0-dev.1)
 
 - **`JournalProducer.OrganizationPrefix` is gone and `ScannedPrefixes` is `kgsm` alone.** A state
   directory beginning `tks-` is no longer a journal a reader finds, so `JournalDiscovery` and
