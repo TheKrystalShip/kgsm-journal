@@ -390,6 +390,18 @@ public class InstanceDeserializationTests
     }
 
     [Fact]
+    public void An_author_without_a_name_binds_the_name_as_null()
+    {
+        StubProcessOutput("""{"name":"factorio-42","maintenance_windows_author":"usr_alice"}""");
+
+        Instance? result = Info();
+
+        Assert.NotNull(result);
+        Assert.Equal("usr_alice", result!.MaintenanceWindowsAuthor);
+        Assert.Null(result.MaintenanceWindowsAuthorName);
+    }
+
+    [Fact]
     public void Maintenance_keys_bind_from_the_wire()
     {
         // The whole maintenance surface an instance carries: the packed windows, the timezone the
@@ -398,6 +410,7 @@ public class InstanceDeserializationTests
             {"name":"factorio-42",
              "maintenance_windows":"daily@05:00/backup;weekly.sun@04:00/backup,update,restart",
              "maintenance_windows_author":"usr_alice",
+             "maintenance_windows_author_name":"Alice Doe",
              "timezone":"Europe/Madrid",
              "backup_retention":"5",
              "announce_lead_minutes":"15,5,1",
@@ -412,6 +425,7 @@ public class InstanceDeserializationTests
             "daily@05:00/backup;weekly.sun@04:00/backup,update,restart",
             result!.MaintenanceWindows);
         Assert.Equal("usr_alice", result.MaintenanceWindowsAuthor);
+        Assert.Equal("Alice Doe", result.MaintenanceWindowsAuthorName);
         Assert.Equal("Europe/Madrid", result.Timezone);
         Assert.Equal(5, result.BackupRetention);
         Assert.Equal("15,5,1", result.AnnounceLeadMinutes);

@@ -258,6 +258,18 @@ public record class Instance
     public string? MaintenanceWindowsAuthor { get; set; }
 
     /// <summary>
+    /// Gets or sets the display name of <see cref="MaintenanceWindowsAuthor"/> as it was when the
+    /// windows were written, or null when none was recorded.
+    /// </summary>
+    /// <remarks>
+    /// Free text for a surface to show beside the account id. The engine writes it with the author and
+    /// removes it with any windows write that names nobody; an instance without one has no such field,
+    /// so a surface falls back to the author id.
+    /// </remarks>
+    [JsonPropertyName("maintenance_windows_author_name")]
+    public string? MaintenanceWindowsAuthorName { get; set; }
+
+    /// <summary>
     /// Gets or sets the lead times, in minutes, at which this instance announces an
     /// upcoming maintenance window — comma-separated, e.g. <c>"15,5,1"</c>.
     /// </summary>

@@ -1185,6 +1185,36 @@ public class InstanceServiceTests
         Assert.True(result.IsSuccess);
     }
 
+    [Fact]
+    public void SetMaintenanceWindows_NamesTheAuthorsDisplayName()
+    {
+        _mockCommandExecutor
+            .Setup(x => x.Execute(It.Is<string[]>(a => ArgsAre(a,
+                "instances", "config-set", "my-instance", "maintenance_windows=daily@05:00/backup",
+                "--author", "usr_alice", "--author-name", "Alice Doe"))))
+            .Returns(new KgsmResult(new ProcessResult(0, "ok", string.Empty)));
+
+        KgsmResult result = _instanceService.SetMaintenanceWindows(
+            "my-instance", "daily@05:00/backup", "usr_alice", authorName: "Alice Doe");
+
+        Assert.True(result.IsSuccess);
+    }
+
+    /// <summary>A name belongs to an author: with nobody named it is not passed.</summary>
+    [Fact]
+    public void SetMaintenanceWindows_WithNoAuthor_PassesNoName()
+    {
+        _mockCommandExecutor
+            .Setup(x => x.Execute(It.Is<string[]>(a => ArgsAre(a,
+                "instances", "config-set", "my-instance", "maintenance_windows="))))
+            .Returns(new KgsmResult(new ProcessResult(0, "ok", string.Empty)));
+
+        KgsmResult result = _instanceService.SetMaintenanceWindows(
+            "my-instance", string.Empty, author: null, authorName: "Alice Doe");
+
+        Assert.True(result.IsSuccess);
+    }
+
     // --- SetDisplayName : one config-set of display_name, text handed over verbatim ---
 
     [Fact]

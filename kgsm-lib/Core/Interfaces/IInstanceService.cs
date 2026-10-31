@@ -749,16 +749,18 @@ public interface IInstanceService
     /// The engine writes <c>maintenance_windows_author</c> with the windows: <paramref name="author"/>, or
     /// nobody when it is null — and windows with no author run nothing. Writing the windows through
     /// <see cref="SetInstanceConfigValue"/> instead leaves them with no author, and the author key itself
-    /// is refused there.
+    /// is refused there. <paramref name="authorName"/> is the author's display name, written with the
+    /// author as <c>maintenance_windows_author_name</c> and removed when the write names nobody.
     /// </remarks>
     /// <param name="instanceName">The instance whose windows to replace.</param>
     /// <param name="packedWindows">The whole list, packed by <see cref="Scheduling.MaintenanceWindowParser"/>; empty for none.</param>
     /// <param name="author">The account id writing them, or null for nobody.</param>
     /// <param name="actor">Optional audit principal — see <see cref="Install"/>.</param>
     /// <param name="origin">Optional driving surface — see <see cref="Install"/>.</param>
+    /// <param name="authorName">The author's display name, or null for none; it needs <paramref name="author"/>.</param>
     /// <returns>Result of the operation; a malformed list or author is a non-zero result.</returns>
     [Performs(KgsmActions.ServerWindowsWrite)]
-    KgsmResult SetMaintenanceWindows(string instanceName, string packedWindows, string? author, string? actor = null, string? origin = null);
+    KgsmResult SetMaintenanceWindows(string instanceName, string packedWindows, string? author, string? actor = null, string? origin = null, string? authorName = null);
 
     /// <summary>
     /// Sets the human-readable label a surface renders for an instance.
