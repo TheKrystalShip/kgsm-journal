@@ -1,4 +1,3 @@
-using TheKrystalShip.KGSM.ComponentConfig;
 using TheKrystalShip.KGSM.Core.Models;
 
 namespace TheKrystalShip.KGSM.Core.Interfaces;
@@ -48,7 +47,6 @@ public interface IInstanceFiles
     /// <see cref="FileOpOutcome.InstanceUnavailable"/> if the instance/its working dir cannot be resolved.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="instance"/> is null or whitespace.</exception>
-    [Performs(KgsmActions.ServerFilesRead)]
     FileOpResult<DirListing> List(string instance, string? subdir, int maxEntries);
 
     /// <summary>
@@ -67,7 +65,6 @@ public interface IInstanceFiles
     /// been exhausted.
     /// </para>
     /// </summary>
-    [Performs(KgsmActions.ServerFilesRead)]
     FileOpResult<FindResult> Find(string instance, string pattern, string? subdir, FindOptions? options = null);
 
     /// <summary>
@@ -84,7 +81,6 @@ public interface IInstanceFiles
     /// from a caller, and a backtracking regex over thousands of files is a denial of service.
     /// </para>
     /// </summary>
-    [Performs(KgsmActions.ServerFilesRead)]
     FileOpResult<FileSearchResult> Search(string instance, string pattern, string? subdir, FileSearchOptions? options = null);
 
     /// <summary>
@@ -102,7 +98,6 @@ public interface IInstanceFiles
     /// UTF-8 text.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="instance"/> is null or whitespace.</exception>
-    [Performs(KgsmActions.ServerFilesRead)]
     FileOpResult<FileContent> Read(string instance, string relPath, long maxBytes);
 
     /// <summary>
@@ -127,7 +122,6 @@ public interface IInstanceFiles
     /// </returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="instance"/> is null or whitespace.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="content"/> is null.</exception>
-    [Performs(KgsmActions.ServerFilesWrite)]
     FileOpResult<FileStat> Write(string instance, string relPath, string content, WriteOptions opts);
 
     /// <summary>
@@ -145,7 +139,6 @@ public interface IInstanceFiles
     /// directory, or any other filesystem failure.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="instance"/> is null or whitespace.</exception>
-    [Performs(KgsmActions.ServerFilesWrite)]
     FileOpResult Delete(string instance, string relPath, DeleteOptions opts);
 
     /// <summary>
@@ -163,6 +156,5 @@ public interface IInstanceFiles
     /// if the destination exists and <see cref="RenameOptions.Overwrite"/> is false.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="instance"/> is null or whitespace.</exception>
-    [Performs(KgsmActions.ServerFilesWrite)]
     FileOpResult<FileStat> Rename(string instance, string fromRel, string toRel, RenameOptions opts);
 }

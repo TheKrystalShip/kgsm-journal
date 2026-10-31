@@ -1,4 +1,3 @@
-using TheKrystalShip.KGSM.ComponentConfig;
 using TheKrystalShip.KGSM.Core.Models;
 
 namespace TheKrystalShip.KGSM.Core.Interfaces;
@@ -16,7 +15,6 @@ public interface IConfigService
     /// The configuration value for the specified key, or null if not found.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown when key is null or whitespace.</exception>
-    [Performs(KgsmActions.EngineConfigRead)]
     string? Get(string key);
 
     /// <summary>
@@ -28,7 +26,6 @@ public interface IConfigService
     /// Result of the set command execution.
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when key or value is null or whitespace.</exception>
-    [Performs(KgsmActions.EngineConfigWrite)]
     KgsmResult Set(string key, string value);
 
     /// <summary>
@@ -37,7 +34,6 @@ public interface IConfigService
     /// <returns>
     /// A dictionary of all configuration key-value pairs, or empty if none found.
     /// </returns>
-    [Performs(KgsmActions.EngineConfigRead)]
     Dictionary<string, string> List();
 
     /// <summary>
@@ -46,7 +42,6 @@ public interface IConfigService
     /// <returns>
     /// Result of the reset command execution.
     /// </returns>
-    [Performs(KgsmActions.EngineConfigWrite)]
     KgsmResult Reset();
 
     /// <summary>
@@ -56,7 +51,6 @@ public interface IConfigService
     /// Result of the validate command execution.
     /// IsSuccess will be true if configuration is valid.
     /// </returns>
-    [Performs(KgsmActions.EngineConfigRead)]
     KgsmResult Validate();
 
     /// <summary>
@@ -65,7 +59,6 @@ public interface IConfigService
     /// Creates a numbered backup before merging.
     /// </summary>
     /// <returns>Result of the merge operation.</returns>
-    [Performs(KgsmActions.EngineConfigWrite)]
     KgsmResult Merge();
 
     /// <summary>
@@ -75,7 +68,6 @@ public interface IConfigService
     /// <param name="generation">The backup generation to restore (0-9, where 0 is the most recent). Default is 0.</param>
     /// <returns>Result of the rollback operation.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when generation is not between 0 and 9.</exception>
-    [Performs(KgsmActions.EngineConfigWrite)]
     KgsmResult Rollback(int generation = 0);
 
     /// <summary>
@@ -85,6 +77,5 @@ public interface IConfigService
     /// <param name="generation">The backup generation to compare with (0-9, where 0 is the most recent). Default is 0.</param>
     /// <returns>Result containing the diff output.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when generation is not between 0 and 9.</exception>
-    [Performs(KgsmActions.EngineConfigRead)]
     KgsmResult Diff(int generation = 0);
 }

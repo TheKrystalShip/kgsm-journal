@@ -1,4 +1,3 @@
-using TheKrystalShip.KGSM.ComponentConfig;
 using TheKrystalShip.KGSM.Core.Models;
 
 namespace TheKrystalShip.KGSM.Core.Interfaces;
@@ -97,7 +96,6 @@ public interface IBlueprintFiles
     /// <remarks>Emits <c>blueprint_created</c> or <c>blueprint_updated</c> on success, exactly as
     /// <see cref="WriteRaw"/> does — a blueprint written through the typed path is no less a blueprint
     /// write, and a consumer that trusts these events must see both. A failed emit does not fail the write.</remarks>
-    [Performs(KgsmActions.BlueprintsWrite)]
     FileOpResult<FileStat> Create(NativeBlueprintDraft draft, bool overwrite = false, string? actor = null, string? origin = null);
 
     /// <summary>
@@ -167,7 +165,6 @@ public interface IBlueprintFiles
     /// </para>
     /// </remarks>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
-    [Performs(KgsmActions.LibraryRead)]
     FileOpResult<BlueprintFileContent> ReadRaw(string name, long maxBytes);
 
     /// <summary>
@@ -211,7 +208,6 @@ public interface IBlueprintFiles
     /// </remarks>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="content"/> or <paramref name="opts"/> is null.</exception>
-    [Performs(KgsmActions.BlueprintsWrite)]
     FileOpResult<FileStat> WriteRaw(string name, string content, BlueprintWriteOptions opts);
 
     /// <summary>
@@ -240,7 +236,6 @@ public interface IBlueprintFiles
     /// <para>A failed emit does not fail the removal — see <see cref="WriteRaw"/>.</para>
     /// </remarks>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
-    [Performs(KgsmActions.BlueprintsWrite)]
     FileOpResult Remove(string name, string? actor = null, string? origin = null);
 
     /// <summary>
@@ -255,6 +250,5 @@ public interface IBlueprintFiles
     /// resolved from the engine.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
-    [Performs(KgsmActions.LibraryRead)]
     FileOpResult<bool> Exists(string name);
 }

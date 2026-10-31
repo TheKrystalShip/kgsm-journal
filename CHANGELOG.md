@@ -7,12 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added — the maintenance-window author's display name (`TheKrystalShip.KGSM.Lib` 9.5.0-dev.3)
+### Added — the maintenance-window author's display name (`TheKrystalShip.KGSM.Lib` 9.5.0-dev.4)
 
 - **`Instance.MaintenanceWindowsAuthorName`** binds `maintenance_windows_author_name`, null when the
   engine reports no such field.
 - **`IInstanceService.SetMaintenanceWindows` takes `authorName`** (last, optional) and passes it as
   `--author-name` beside `--author`. Without an author no name is passed.
+- **The engine calls carry no `[Performs]` marks**, and the build references
+  `TheKrystalShip.KGSM.ComponentConfig` 4.0.0.
 
 ### Changed — a reader scans the ecosystem's journals only (`TheKrystalShip.KGSM.Lib` 9.5.0-dev.2, `TheKrystalShip.KGSM.Journal` 2.5.0-dev.1)
 

@@ -1,4 +1,3 @@
-using TheKrystalShip.KGSM.ComponentConfig;
 using TheKrystalShip.KGSM.Core.Models;
 
 namespace TheKrystalShip.KGSM.Core.Interfaces;
@@ -29,7 +28,6 @@ public interface ILifecycleService
     /// caller that does not ask for it keeps the protection.</param>
     /// <returns>A <see cref="KgsmResult"/> containing the command execution result.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="instanceName"/> is null.</exception>
-    [Performs(KgsmActions.ServerStart)]
     KgsmResult Start(string instanceName, string? actor = null, string? origin = null, bool force = false);
 
     /// <summary>
@@ -40,7 +38,6 @@ public interface ILifecycleService
     /// <param name="origin">Optional driving surface — see <see cref="Start"/>.</param>
     /// <returns>A <see cref="KgsmResult"/> containing the command execution result.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="instanceName"/> is null.</exception>
-    [Performs(KgsmActions.ServerStop)]
     KgsmResult Stop(string instanceName, string? actor = null, string? origin = null);
 
     /// <summary>
@@ -51,7 +48,6 @@ public interface ILifecycleService
     /// <param name="origin">Optional driving surface — see <see cref="Start"/>.</param>
     /// <returns>A <see cref="KgsmResult"/> containing the command execution result.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="instanceName"/> is null.</exception>
-    [Performs(KgsmActions.ServerRestart)]
     KgsmResult Restart(string instanceName, string? actor = null, string? origin = null);
 
     /// <summary>
@@ -60,7 +56,6 @@ public interface ILifecycleService
     /// <param name="instanceName">The name of the instance to get status for.</param>
     /// <returns>A <see cref="KgsmResult"/> containing the status information.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="instanceName"/> is null.</exception>
-    [Performs(KgsmActions.ServerRead)]
     KgsmResult GetStatus(string instanceName);
 
     /// <summary>
@@ -69,7 +64,6 @@ public interface ILifecycleService
     /// <param name="instanceName">The name of the instance to check.</param>
     /// <returns><c>true</c> if the instance is active; otherwise, <c>false</c>.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="instanceName"/> is null.</exception>
-    [Performs(KgsmActions.ServerRead)]
     bool IsActive(string instanceName);
 
     /// <summary>
@@ -80,7 +74,6 @@ public interface ILifecycleService
     /// <returns>A collection of log lines.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="instanceName"/> is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the logs cannot be retrieved.</exception>
-    [Performs(KgsmActions.ServerConsoleRead)]
     ICollection<string> GetLogs(string instanceName, int lines = 10);
 
     /// <summary>
@@ -92,6 +85,5 @@ public interface ILifecycleService
     /// <returns>A task representing the asynchronous operation, containing a collection of log lines.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="instanceName"/> is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the logs cannot be retrieved.</exception>
-    [Performs(KgsmActions.ServerConsoleRead)]
     Task<ICollection<string>> GetLogsAsync(string instanceName, int lines = 10, CancellationToken cancellationToken = default);
 }

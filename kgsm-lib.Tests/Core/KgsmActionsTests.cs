@@ -87,22 +87,6 @@ public sealed class KgsmActionsTests
         Assert.Equal(KgsmActions.Component, Engine().Component);
 
     [Fact]
-    public void EveryMarkedCallPerformsAnEngineAction()
-    {
-        // A [Performs] naming an action the engine does not declare would hold every caller to an
-        // action nobody can be granted.
-        string[] engine = Engine().Actions;
-        var marks = typeof(KgsmActions).Assembly.GetTypes()
-            .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
-            .SelectMany(m => m.GetCustomAttributes<TheKrystalShip.KGSM.ComponentConfig.PerformsAttribute>()
-                .Select(p => (Method: $"{m.DeclaringType!.Name}.{m.Name}", p.Action)))
-            .ToArray();
-
-        Assert.NotEmpty(marks);
-        Assert.All(marks, mark => Assert.Contains(mark.Action, engine));
-    }
-
-    [Fact]
     public void NoTwoConstantsNameOneAction()
     {
         string[] mirrored = Mirrored();

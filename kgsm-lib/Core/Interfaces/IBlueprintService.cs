@@ -1,4 +1,3 @@
-using TheKrystalShip.KGSM.ComponentConfig;
 using TheKrystalShip.KGSM.Core.Models;
 
 namespace TheKrystalShip.KGSM.Core.Interfaces;
@@ -14,7 +13,6 @@ public interface IBlueprintService
     /// <returns>
     /// A list of blueprint names or empty if none found.
     /// </returns>
-    [Performs(KgsmActions.LibraryRead)]
     List<string> List();
 
     /// <summary>
@@ -23,7 +21,6 @@ public interface IBlueprintService
     /// <returns>
     /// A list of default blueprint names or empty if none found.
     /// </returns>
-    [Performs(KgsmActions.LibraryRead)]
     List<string> ListDefault();
 
     /// <summary>
@@ -32,7 +29,6 @@ public interface IBlueprintService
     /// <returns>
     /// A list of custom blueprint names or empty if none found.
     /// </returns>
-    [Performs(KgsmActions.LibraryRead)]
     List<string> ListCustom();
 
     /// <summary>
@@ -42,7 +38,6 @@ public interface IBlueprintService
     /// A dictionary of blueprint names to blueprint objects with full details,
     /// or empty if none found.
     /// </returns>
-    [Performs(KgsmActions.LibraryRead)]
     Dictionary<string, Blueprint> ListDetailed();
 
     /// <summary>
@@ -52,7 +47,6 @@ public interface IBlueprintService
     /// <returns>
     /// The blueprint object with all details.
     /// </returns>
-    [Performs(KgsmActions.LibraryRead)]
     Blueprint? GetInfo(string blueprintName);
 
     /// <summary>
@@ -67,7 +61,6 @@ public interface IBlueprintService
     /// reports no path at all. Use <see cref="FindAll(string)"/> when the file has to be found in order
     /// to be repaired, or when a caller needs to tell a custom blueprint apart from an override.
     /// </remarks>
-    [Performs(KgsmActions.LibraryRead)]
     string? FindPath(string blueprintName);
 
     /// <summary>
@@ -85,7 +78,6 @@ public interface IBlueprintService
     /// a shipped one; only a user candidate means there is no original to fall back to.
     /// </remarks>
     /// <exception cref="ArgumentException">Thrown when <paramref name="blueprintName"/> is null or whitespace.</exception>
-    [Performs(KgsmActions.LibraryRead)]
     BlueprintCandidates? FindAll(string blueprintName);
 
     /// <summary>
@@ -106,7 +98,6 @@ public interface IBlueprintService
     /// engine owns the rules, and the library never re-implements them.
     /// </remarks>
     /// <exception cref="ArgumentException">Thrown when <paramref name="blueprintNameOrPath"/> is null or whitespace.</exception>
-    [Performs(KgsmActions.LibraryRead)]
     BlueprintValidation? Validate(string blueprintNameOrPath);
 
     /// <summary>
@@ -123,7 +114,6 @@ public interface IBlueprintService
     /// manual writer reads while filling the file in. This is the same skeleton the assistant's authoring lane
     /// works from, so both paths share one source.
     /// </remarks>
-    [Performs(KgsmActions.LibraryRead)]
     string? GetScaffold();
 
     /// <summary>
@@ -133,6 +123,5 @@ public interface IBlueprintService
     /// <param name="blueprintName">Blueprint to ask about.</param>
     /// <returns>The requirements, or <see langword="null"/> when the engine printed no answer (an unknown blueprint, an unreachable engine): unknown, never assumed present.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="blueprintName"/> is null or whitespace.</exception>
-    [Performs(KgsmActions.LibraryRead)]
     BlueprintRequirements? BlueprintRequirements(string blueprintName);
 }
