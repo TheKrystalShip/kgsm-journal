@@ -46,7 +46,8 @@ public static class JournalAccess
 
         try
         {
-            if (!Directory.Exists(stateDirectory))
+            // Group access is a Unix mode; a platform without one has nothing to report.
+            if (OperatingSystem.IsWindows() || !Directory.Exists(stateDirectory))
                 return null;
 
             UnixFileMode mode = File.GetUnixFileMode(stateDirectory);

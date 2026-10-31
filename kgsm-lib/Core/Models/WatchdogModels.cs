@@ -298,7 +298,7 @@ public record class WatchdogInstancePresence
 /// <b><see cref="Index"/> is the whole address.</b> It is positional and newest-first, so it is only
 /// meaningful against the listing it came from — read the runs, pick one, use its index straight
 /// away rather than storing it. No file path is exposed: the run's bytes come back from
-/// <see cref="IWatchdogClient.GetConsoleRunTailAsync"/>, never from the caller opening anything.
+/// <see cref="Interfaces.IWatchdogClient.GetConsoleRunTailAsync(string, int, int, System.Threading.CancellationToken)"/>, never from the caller opening anything.
 /// </para>
 /// </remarks>
 public record class WatchdogConsoleRun

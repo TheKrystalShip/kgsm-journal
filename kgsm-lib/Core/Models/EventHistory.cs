@@ -163,6 +163,9 @@ public sealed record JournalCoverage(
 /// <param name="RunId">The process lifetime this event belongs to, or null.</param>
 /// <param name="During">The operations in flight when it was established — co-incidence, not
 /// causality — or null.</param>
+/// <param name="Severity">How much the event matters (<c>info</c>, <c>warn</c> or <c>danger</c>), or null.</param>
+/// <param name="Outcome">How it went (<c>success</c>, <c>failure</c> or <c>neutral</c>), or null.</param>
+/// <param name="Summary">One line of prose written when the event happened, or null.</param>
 public sealed record EventHistoryEntry(
     string Id,
     DateTimeOffset Ts,

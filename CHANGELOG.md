@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — a warning-free build (`TheKrystalShip.KGSM.Lib` 9.5.0-dev.5, `TheKrystalShip.KGSM.Journal` 2.5.0-dev.2)
+
+The event history entry and event descriptor documents describe every parameter, the console-run
+documentation resolves its `GetConsoleRunTailAsync` reference, and `JournalAccess` reads a state
+directory's Unix mode only where the platform has one. The tests assert a captured argument list is
+present before comparing it, and declare themselves Linux-only for the file-mode calls.
+
 ### Added — the maintenance-window author's display name (`TheKrystalShip.KGSM.Lib` 9.5.0-dev.4)
 
 - **`Instance.MaintenanceWindowsAuthorName`** binds `maintenance_windows_author_name`, null when the

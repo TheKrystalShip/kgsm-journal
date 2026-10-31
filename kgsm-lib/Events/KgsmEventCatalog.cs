@@ -1013,6 +1013,7 @@ public static class KgsmEventCatalog
 /// the engine's naming convention and the rest are cautious defaults. An unknown type must still be
 /// shown — dropping it is how a surface reports a busy night as a quiet one.
 /// </param>
+/// <param name="Severity">How much the event matters; <see cref="EventSeverity.Info"/> unless classified otherwise.</param>
 public sealed record EventDescriptor(
     string Type,
     EventSubject Subject,

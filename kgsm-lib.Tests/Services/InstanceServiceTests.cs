@@ -1255,6 +1255,7 @@ public class InstanceServiceTests
     {
         string[]? captured = CaptureDisplayNameWrite(label);
 
+        Assert.NotNull(captured);
         Assert.Equal(["instances", "config-set", "my-instance", $"display_name={label}"], captured);
     }
 
@@ -1272,6 +1273,7 @@ public class InstanceServiceTests
     {
         string[]? captured = CaptureDisplayNameWrite(label);
 
+        Assert.NotNull(captured);
         Assert.Equal(["instances", "config-set", "my-instance", $"display_name={stored}"], captured);
     }
 

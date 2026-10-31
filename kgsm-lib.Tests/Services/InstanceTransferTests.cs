@@ -102,6 +102,7 @@ public class InstanceTransferTests
 
         TransferOutcome<TransferManifest> outcome = _service.ExportManifest("factorio-7f3a", "tok-1");
 
+        Assert.NotNull(issued);
         Assert.Equal(["instances", "export", "factorio-7f3a", "--manifest", "--lock", "tok-1"], issued);
         Assert.True(outcome.IsSuccess);
         Assert.Equal("factorio-7f3a", outcome.Value!.Instance.Id);
@@ -118,6 +119,7 @@ public class InstanceTransferTests
 
         _service.ExportManifest("factorio-7f3a");
 
+        Assert.NotNull(issued);
         Assert.Equal(["instances", "export", "factorio-7f3a", "--manifest"], issued);
     }
 
@@ -160,6 +162,7 @@ public class InstanceTransferTests
         StreamResult result = await _service.ExportPartAsync("factorio-7f3a", "tree", "tok-1", destination);
 
         Assert.True(result.IsSuccess);
+        Assert.NotNull(issued);
         Assert.Equal(["instances", "export", "factorio-7f3a", "--part", "tree", "--lock", "tok-1"], issued);
     }
 
@@ -176,6 +179,7 @@ public class InstanceTransferTests
         KgsmResult result = _service.CommitExport("factorio-7f3a", "tok-1");
 
         Assert.True(result.IsSuccess);
+        Assert.NotNull(issued);
         Assert.Equal(["instances", "export", "factorio-7f3a", "--commit", "--lock", "tok-1"], issued);
         Assert.Equal(new KgsmTimeoutOptions().Uninstall, timeout);
     }
@@ -231,6 +235,7 @@ public class InstanceTransferTests
 
         Assert.True(verdict.Ok);
         Assert.Empty(verdict.Refusals);
+        Assert.NotNull(issued);
         Assert.Equal(["instances", "import", "check", "--json", "--library", "ssd", "--blueprint-suffix", "migrated"], issued);
         Assert.Contains("\"engine_version\":\"3.18.0-rc34\"", stdin);
     }
@@ -312,6 +317,7 @@ public class InstanceTransferTests
         StreamResult result = await _service.ImportPartAsync("imp-0123456789ab", "image-1", source);
 
         Assert.Equal(TransferExitCodes.TransferIntegrity, result.ExitCode);
+        Assert.NotNull(issued);
         Assert.Equal(["instances", "import", "part", "imp-0123456789ab", "image-1"], issued);
     }
 
@@ -326,6 +332,7 @@ public class InstanceTransferTests
 
         TransferOutcome<ImportedInstance> outcome = _service.ImportFinish("imp-0123456789ab");
 
+        Assert.NotNull(issued);
         Assert.Equal(["instances", "import", "finish", "imp-0123456789ab", "--json"], issued);
         Assert.Equal("factorio-91ab", outcome.Value!.Instance);
         Assert.Equal("factorio", outcome.Value.Blueprint);
@@ -355,6 +362,7 @@ public class InstanceTransferTests
             .Returns(new KgsmResult(0));
 
         Assert.True(_service.ImportAbort("imp-0123456789ab").IsSuccess);
+        Assert.NotNull(issued);
         Assert.Equal(["instances", "import", "abort", "imp-0123456789ab"], issued);
     }
 
