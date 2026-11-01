@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
+using TheKrystalShip.Testing;
 
 namespace TheKrystalShip.KGSM.Tests.Services;
 
@@ -13,13 +14,6 @@ namespace TheKrystalShip.KGSM.Tests.Services;
 /// </summary>
 public sealed class EventJournalReaderTests : IDisposable
 {
-    /// <summary>
-    /// How long a test waits for the reader to notice a change. The reader polls once a second
-    /// as a backstop behind the filesystem watcher, so this must comfortably exceed that; it is
-    /// a ceiling, not a delay — every assertion returns as soon as the condition holds.
-    /// </summary>
-    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
-
     private readonly string _directory;
 
     public EventJournalReaderTests()
@@ -94,21 +88,6 @@ public sealed class EventJournalReaderTests : IDisposable
             stream.Write(chunk, 0, chunk.Length);
     }
 
-    private static async Task WaitFor(Func<bool> condition, string because)
-    {
-        DateTime deadline = DateTime.UtcNow + Timeout;
-
-        while (DateTime.UtcNow < deadline)
-        {
-            if (condition())
-                return;
-
-            await Task.Delay(25);
-        }
-
-        Assert.Fail($"Timed out after {Timeout.TotalSeconds}s waiting for: {because}");
-    }
-
     /// <summary>
     /// Runs a reader for the duration of <paramref name="body"/>, collecting everything it
     /// delivers, and stops it afterwards.
@@ -154,7 +133,7 @@ public sealed class EventJournalReaderTests : IDisposable
         {
             Append("2026-08-04.ndjson", Envelope("arrived-later"));
 
-            await WaitFor(() => received.Count == 1, "the new event to be delivered");
+            await Eventually.Holds(() => received.Count == 1, "the new event to be delivered");
             Assert.Contains("arrived-later", received.Single());
         });
     }
@@ -170,7 +149,7 @@ public sealed class EventJournalReaderTests : IDisposable
 
         await RunAsync(reader, async received =>
         {
-            await WaitFor(() => received.Count == 4, "the whole journal to replay");
+            await Eventually.Holds(() => received.Count == 4, "the whole journal to replay");
 
             string[] order = received.ToArray();
             Assert.Contains("first", order[0]);
@@ -196,7 +175,7 @@ public sealed class EventJournalReaderTests : IDisposable
 
         await RunAsync(reader, async received =>
         {
-            await WaitFor(() => received.Count == 2, "both events either side of the hole");
+            await Eventually.Holds(() => received.Count == 2, "both events either side of the hole");
 
             string[] order = received.ToArray();
             Assert.Contains("before-the-crash", order[0]);
@@ -216,7 +195,7 @@ public sealed class EventJournalReaderTests : IDisposable
         {
             Append("2026-08-04.ndjson", Envelope("the-first-event-ever"));
 
-            await WaitFor(() => received.Count == 1, "the first segment to be picked up");
+            await Eventually.Holds(() => received.Count == 1, "the first segment to be picked up");
             Assert.Contains("the-first-event-ever", received.Single());
         });
     }
@@ -235,7 +214,7 @@ public sealed class EventJournalReaderTests : IDisposable
             Directory.CreateDirectory(_directory);
             Append("2026-08-04.ndjson", Envelope("after-the-directory-appeared"));
 
-            await WaitFor(() => received.Count == 1, "the journal to be picked up once it exists");
+            await Eventually.Holds(() => received.Count == 1, "the journal to be picked up once it exists");
             Assert.Contains("after-the-directory-appeared", received.Single());
         });
     }
@@ -259,7 +238,7 @@ public sealed class EventJournalReaderTests : IDisposable
 
             await File.AppendAllTextAsync(SegmentPath("2026-08-04.ndjson"), envelope[20..] + "\n");
 
-            await WaitFor(() => received.Count == 1, "the completed line to be delivered");
+            await Eventually.Holds(() => received.Count == 1, "the completed line to be delivered");
             Assert.Equal(envelope, received.Single());
         });
     }
@@ -273,7 +252,7 @@ public sealed class EventJournalReaderTests : IDisposable
 
         await RunAsync(reader, async received =>
         {
-            await WaitFor(() => received.Count == 1, "only the real event to be delivered");
+            await Eventually.Holds(() => received.Count == 1, "only the real event to be delivered");
             await Task.Delay(500);
 
             Assert.Single(received);
@@ -292,11 +271,11 @@ public sealed class EventJournalReaderTests : IDisposable
 
         await RunAsync(reader, async received =>
         {
-            await WaitFor(() => received.Count == 1, "the current segment to be read");
+            await Eventually.Holds(() => received.Count == 1, "the current segment to be read");
 
             Append("2026-08-05.ndjson", Envelope("today"));
 
-            await WaitFor(() => received.Count == 2, "the new segment to be picked up");
+            await Eventually.Holds(() => received.Count == 2, "the new segment to be picked up");
             Assert.Contains("today", received.ToArray()[1]);
         });
     }
@@ -310,17 +289,17 @@ public sealed class EventJournalReaderTests : IDisposable
 
         await RunAsync(reader, async received =>
         {
-            await WaitFor(() => received.Count == 1, "the first segment to be read");
+            await Eventually.Holds(() => received.Count == 1, "the first segment to be read");
 
             Append("2026-08-05.ndjson", Envelope("after-midnight"));
-            await WaitFor(() => received.Count == 2, "the reader to advance to the new segment");
+            await Eventually.Holds(() => received.Count == 2, "the reader to advance to the new segment");
 
             // The engine names a segment from the clock when the emit starts, so an emit that
             // begins just before midnight lands in the old segment after the reader has already
             // moved on. Skipping it would lose an event to a race with the calendar.
             Append("2026-08-04.ndjson", Envelope("straggler"));
 
-            await WaitFor(() => received.Count == 3, "the late write to the previous segment");
+            await Eventually.Holds(() => received.Count == 3, "the late write to the previous segment");
             Assert.Contains("straggler", received.ToArray()[2]);
         });
     }
@@ -337,8 +316,8 @@ public sealed class EventJournalReaderTests : IDisposable
 
         await RunAsync(reader, async received =>
         {
-            await WaitFor(() => received.Count == 2, "both events to be delivered");
-            await WaitFor(() => cursors.Cursor is not null, "the cursor to be stored");
+            await Eventually.Holds(() => received.Count == 2, "both events to be delivered");
+            await Eventually.Holds(() => cursors.Cursor is not null, "the cursor to be stored");
 
             Assert.Equal("2026-08-04.ndjson", cursors.Cursor!.Segment);
             Assert.Equal(new FileInfo(SegmentPath("2026-08-04.ndjson")).Length, cursors.Cursor.Offset);
@@ -367,7 +346,7 @@ public sealed class EventJournalReaderTests : IDisposable
         {
             // The point of the journal over a socket: an event emitted while the consumer was
             // down is still there when it comes back.
-            await WaitFor(() => received.Count == 1, "the event emitted while down to be delivered");
+            await Eventually.Holds(() => received.Count == 1, "the event emitted while down to be delivered");
             Assert.Contains("missed-while-down", received.Single());
         });
     }
@@ -393,7 +372,7 @@ public sealed class EventJournalReaderTests : IDisposable
 
         await RunAsync(reader, async received =>
         {
-            await WaitFor(() => received.Count == 2, "both later segments to be caught up");
+            await Eventually.Holds(() => received.Count == 2, "both later segments to be caught up");
 
             string[] order = received.ToArray();
             Assert.Contains("day-two", order[0]);
@@ -417,7 +396,7 @@ public sealed class EventJournalReaderTests : IDisposable
         {
             Append("2026-08-04.ndjson", Envelope("live"));
 
-            await WaitFor(() => received.Count == 1, "only the live event to be delivered");
+            await Eventually.Holds(() => received.Count == 1, "only the live event to be delivered");
             Assert.Contains("live", received.Single());
         });
     }
@@ -448,7 +427,7 @@ public sealed class EventJournalReaderTests : IDisposable
 
         await RunAsync(reader, async received =>
         {
-            await WaitFor(() => gap is not null, "the gap to be reported");
+            await Eventually.Holds(() => gap is not null, "the gap to be reported");
 
             Assert.Equal("2026-05-01.ndjson", gap!.LostSegment);
             Assert.Equal(512, gap.LostOffset);
@@ -456,7 +435,7 @@ public sealed class EventJournalReaderTests : IDisposable
             Assert.Equal("2026-08-04.ndjson", gap.ResumedAtSegment);
             Assert.Equal(0, gap.ResumedAtOffset);
 
-            await WaitFor(() => received.Count == 1, "reading to resume at the oldest surviving segment");
+            await Eventually.Holds(() => received.Count == 1, "reading to resume at the oldest surviving segment");
             Assert.Contains("survived", received.Single());
         });
     }
@@ -486,7 +465,7 @@ public sealed class EventJournalReaderTests : IDisposable
 
         await RunAsync(reader, async _ =>
         {
-            await WaitFor(() => gap is not null, "the gap to be reported");
+            await Eventually.Holds(() => gap is not null, "the gap to be reported");
             Assert.Equal(EventJournalGapReason.SegmentTruncated, gap!.Reason);
         });
     }
@@ -512,7 +491,7 @@ public sealed class EventJournalReaderTests : IDisposable
 
         await RunAsync(reader, async received =>
         {
-            await WaitFor(() => received.Count == 1, "the event to be delivered from the cursor");
+            await Eventually.Holds(() => received.Count == 1, "the event to be delivered from the cursor");
             Assert.False(reported, "a satisfiable cursor must not be reported as a gap");
         });
     }
@@ -538,11 +517,11 @@ public sealed class EventJournalReaderTests : IDisposable
 
         try
         {
-            await WaitFor(() => seen.Count == 1, "the first event to reach the handler");
+            await Eventually.Holds(() => seen.Count == 1, "the first event to reach the handler");
 
             Append("2026-08-04.ndjson", Envelope("still-flowing"));
 
-            await WaitFor(() => seen.Count == 2, "the stream to continue past the throwing handler");
+            await Eventually.Holds(() => seen.Count == 2, "the stream to continue past the throwing handler");
         }
         finally
         {

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using TheKrystalShip.KGSM.Events;
+using TheKrystalShip.Testing;
 
 namespace TheKrystalShip.KGSM.Tests.Services;
 
@@ -588,23 +589,6 @@ public sealed class EventJournalFederationTests : IDisposable
 
     // ── The federated live tail ──────────────────────────────────────────────────────────
 
-    private static readonly TimeSpan TailTimeout = TimeSpan.FromSeconds(10);
-
-    private static async Task WaitFor(Func<bool> condition, string because)
-    {
-        DateTime deadline = DateTime.UtcNow + TailTimeout;
-
-        while (DateTime.UtcNow < deadline)
-        {
-            if (condition())
-                return;
-
-            await Task.Delay(25);
-        }
-
-        Assert.Fail($"Timed out after {TailTimeout.TotalSeconds}s waiting for: {because}");
-    }
-
     private FederatedEventSource CreateSource(string cursorPath, params string[] producers)
         => new(
             [.. producers.Select(p => new JournalSource(p, DirectoryFor(p)))],
@@ -636,7 +620,7 @@ public sealed class EventJournalFederationTests : IDisposable
 
         try
         {
-            await WaitFor(() => seen.Count == 2, "both journals to replay");
+            await Eventually.Holds(() => seen.Count == 2, "both journals to replay");
 
             Assert.Equal(
                 ["kgsm", "watchdog"],
@@ -669,7 +653,7 @@ public sealed class EventJournalFederationTests : IDisposable
             Task listening = source.StartListeningAsync(cts.Token);
             try
             {
-                await WaitFor(() => count == 2, "both events to be delivered");
+                await Eventually.Holds(() => count == 2, "both events to be delivered");
 
                 // Wait for BOTH slots, not for the file: the cursor map is written by whichever
                 // reader saves first, so the file existing proves only one of them got there. The
@@ -678,7 +662,7 @@ public sealed class EventJournalFederationTests : IDisposable
                 var probe = new FileFederatedEventCursorStore(
                     cursorPath, new Mock<ILogger<FileFederatedEventCursorStore>>().Object);
 
-                await WaitFor(
+                await Eventually.Holds(
                     () => probe.LoadAsync("kgsm").GetAwaiter().GetResult() is not null
                           && probe.LoadAsync("watchdog").GetAwaiter().GetResult() is not null,
                     "both producers' cursors to be persisted");
@@ -731,11 +715,11 @@ public sealed class EventJournalFederationTests : IDisposable
         try
         {
             await CreateWriter("kgsm").AppendAsync(EventName.Parse("server.started"), Payload("""{"InstanceName":"K"}"""));
-            await WaitFor(() => seen.Contains("kgsm"), "the existing journal to deliver");
+            await Eventually.Holds(() => seen.Contains("kgsm"), "the existing journal to deliver");
 
             // Now the absent producer's journal appears.
             await CreateWriter("monitor").AppendAsync(EventName.Parse("host_threshold_breach"), Payload("""{"InstanceName":"K"}"""));
-            await WaitFor(() => seen.Contains("monitor"), "the newly created journal to be picked up");
+            await Eventually.Holds(() => seen.Contains("monitor"), "the newly created journal to be picked up");
         }
         finally
         {
