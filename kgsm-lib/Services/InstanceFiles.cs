@@ -211,8 +211,14 @@ public sealed class InstanceFiles : IInstanceFiles
     private readonly record struct WalkOutcome(int Scanned, bool LimitHit);
 
     /// <summary>
-    /// Depth-first walk from <paramref name="start"/>, invoking <paramref name="visit"/> per entry and
+    /// Breadth-first walk from <paramref name="start"/>, invoking <paramref name="visit"/> per entry and
     /// stopping when it returns false.
+    /// <para>
+    /// <b>Every entry of a level is seen before any entry below it.</b> A walk that stops on its budget has
+    /// then seen the shallow files a person looks for, the configs beside a game's data, rather than having
+    /// spent the budget in the first deep folder it met: a world save of hundreds of thousands of files sits
+    /// beside the four files of a server's config.
+    /// </para>
     /// <para>
     /// <b>A symlinked directory is recorded and never descended into.</b> Containment therefore does not
     /// rest on a check applied after the fact — the walk simply has no path out of the jail. Directories
@@ -221,13 +227,13 @@ public sealed class InstanceFiles : IInstanceFiles
     /// </summary>
     private WalkOutcome Walk(string root, string start, FindOptions opts, Func<WalkEntry, bool> visit)
     {
-        var queue = new Stack<(string Dir, int Depth)>();
-        queue.Push((start, 0));
+        var queue = new Queue<(string Dir, int Depth)>();
+        queue.Enqueue((start, 0));
         int scanned = 0;
 
         while (queue.Count > 0)
         {
-            (string dir, int depth) = queue.Pop();
+            (string dir, int depth) = queue.Dequeue();
 
             IEnumerable<string> names;
             try { names = Directory.EnumerateFileSystemEntries(dir); }
@@ -276,7 +282,7 @@ public sealed class InstanceFiles : IInstanceFiles
                     && string.Equals(Path.GetFileName(full), "backups", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                queue.Push((full, depth + 1));
+                queue.Enqueue((full, depth + 1));
             }
         }
 

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — a file walk sees shallow files before deep ones (`TheKrystalShip.KGSM.Lib` 9.5.0-dev.6)
+
+`IInstanceFiles.Find` and `Search` walk breadth-first, so a walk that stops on `MaxEntriesScanned` has seen
+every shallow entry before any deep one. Depth-first, a Project Zomboid server's world save
+(`saves/Saves/`, about 310,000 files on hotrod) spent the whole budget before the walk reached the four files of
+`saves/Server/`, and a search for its ini found nothing.
+
 ### Fixed — a warning-free build (`TheKrystalShip.KGSM.Lib` 9.5.0-dev.5, `TheKrystalShip.KGSM.Journal` 2.5.0-dev.2)
 
 The event history entry and event descriptor documents describe every parameter, the console-run

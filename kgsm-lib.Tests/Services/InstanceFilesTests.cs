@@ -671,6 +671,21 @@ public sealed class InstanceFilesTests : IDisposable
     }
 
     [Fact]
+    public void Find_SeesTheShallowConfigBeforeSpendingItsBudgetInADeepWorldFolder()
+    {
+        Directory.CreateDirectory(Abs("saves/Saves/Multiplayer/default/map"));
+        for (int i = 0; i < 50; i++)
+            File.WriteAllText(Abs($"saves/Saves/Multiplayer/default/map/chunk{i}.bin"), "x");
+        Directory.CreateDirectory(Abs("saves/Server"));
+        File.WriteAllText(Abs("saves/Server/default.ini"), "Mods=");
+
+        var found = _sut.Find(InstanceName, "*.ini", null, new FindOptions(MaxEntriesScanned: 12));
+
+        Assert.True(found.Value!.ScanLimitHit);
+        Assert.Contains("saves/Server/default.ini", found.Value!.Matches.Select(m => m.Path));
+    }
+
+    [Fact]
     public void Find_SkipsBackupsUnlessAsked()
     {
         Directory.CreateDirectory(Abs("backups/old"));
