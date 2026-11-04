@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — concurrent appends keep every line (`TheKrystalShip.KGSM.Journal` 2.5.0-dev.3)
+
+- `EventJournalWriter` writes each line with one `write` on a descriptor opened `O_APPEND`, through
+  libc. A `FileStream` in `FileMode.Append` seeks to the end once and writes at that offset, so
+  concurrent appends overwrote each other: 300 parallel appends in one process kept 43 to 119 lines.
+  Released on its own as `TheKrystalShip.KGSM.Journal` 2.4.1. A test appends 300 lines in parallel and
+  reads back all 300.
+
 ### Fixed — a file walk sees shallow files before deep ones (`TheKrystalShip.KGSM.Lib` 9.5.0-dev.6)
 
 `IInstanceFiles.Find` and `Search` walk breadth-first, so a walk that stops on `MaxEntriesScanned` has seen

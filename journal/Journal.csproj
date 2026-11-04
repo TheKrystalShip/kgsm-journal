@@ -8,7 +8,8 @@
 
     <PackageId>TheKrystalShip.KGSM.Journal</PackageId>
     <Authors>Heisenberg</Authors>
-    <Version>2.5.0-dev.2</Version>
+    <Version>2.5.0-dev.3</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageProjectUrl>https://github.com/TheKrystalShip/KGSM-Lib</PackageProjectUrl>
     <RepositoryUrl>https://github.com/TheKrystalShip/KGSM-Lib</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>

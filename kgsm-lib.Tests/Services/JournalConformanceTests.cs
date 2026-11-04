@@ -417,6 +417,24 @@ public sealed class JournalConformanceTests : IDisposable
     }
 
     [Fact]
+    public void Writer_KeepsEveryLineWhenAppendsRunConcurrently()
+    {
+        // A producer emits from many threads at once. Each append is one O_APPEND write, so the
+        // kernel lands every line whole at the end; a seek-then-write append lets them overwrite.
+        string dir = Segments("kgsm-monitor");
+        IEventJournalWriter writer = new EventJournalWriter(
+            Options("kgsm-monitor", dir, clock: () => At("2026-08-16")),
+            new Mock<ILogger<EventJournalWriter>>().Object);
+
+        Parallel.For(0, 300, new ParallelOptions { MaxDegreeOfParallelism = 16 },
+            _ => writer.AppendAsync(EventName.Parse("thing_happened"), Payload()).AsTask().GetAwaiter().GetResult());
+
+        string[] lines = File.ReadAllLines(Path.Combine(dir, "2026-08-16.ndjson"));
+        Assert.Equal(300, lines.Length);
+        Assert.All(lines, l => Assert.StartsWith("{", l));
+    }
+
+    [Fact]
     public async Task Writer_GivesTwoIdenticalEventsDifferentIds()
     {
         // The reason the id is minted and never derived from content. Two identical events in the

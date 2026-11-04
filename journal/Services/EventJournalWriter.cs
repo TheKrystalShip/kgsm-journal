@@ -225,15 +225,9 @@ public sealed class EventJournalWriter : IEventJournalWriter
 
             Directory.CreateDirectory(_directory);
 
-            // FileMode.Append opens with O_APPEND, so the single Write below lands at the end of the
-            // file as one operation even with other writers on the same segment. FileShare allows the
-            // concurrent readers tailing it, and retention unlinking it underneath.
-            using var stream = new FileStream(
-                path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete,
-                bufferSize: 0, useAsync: false);
-
-            stream.Write(line, 0, line.Length);
-            stream.Flush();
+            // One O_APPEND write of the whole line: the kernel moves to the end and writes in one step,
+            // so concurrent appenders, threads or processes, land whole lines one after another.
+            AppendOnlyFile.Write(path, line);
             return true;
         }
         catch (OperationCanceledException)
