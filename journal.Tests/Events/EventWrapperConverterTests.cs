@@ -70,6 +70,8 @@ public class EventWrapperConverterTests
     public void AWrongTypedEnvelopeField_IsAJsonException()
     {
         Assert.Throws<JsonException>(() => Read("""{"EventType":7}"""));
+        Assert.Throws<JsonException>(() => Read("""{"EventType":"x","Timestamp":"yesterday"}"""));
+        Assert.Throws<JsonException>(() => Read("""{"EventType":"x","V":"2"}"""));
     }
 
     [Fact]

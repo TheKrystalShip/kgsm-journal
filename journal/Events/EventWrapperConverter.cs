@@ -48,14 +48,12 @@ public sealed class EventWrapperConverter : JsonConverter<EventWrapper>
             else if (Is(name, "Severity")) wrapper.Severity = ReadString(ref reader);
             else if (Is(name, "Outcome")) wrapper.Outcome = ReadString(ref reader);
             else if (Is(name, "Summary")) wrapper.Summary = ReadString(ref reader);
-            else if (Is(name, "Timestamp"))
-                wrapper.Timestamp = reader.TokenType == JsonTokenType.Null ? null : reader.GetDateTimeOffset();
+            else if (Is(name, "Timestamp")) wrapper.Timestamp = ReadInstant(ref reader);
             else if (Is(name, "Actor")) wrapper.Actor = ReadString(ref reader);
             else if (Is(name, "Origin")) wrapper.Origin = ReadString(ref reader);
             else if (Is(name, "Hostname")) wrapper.Hostname = ReadString(ref reader);
             else if (Is(name, "KGSMVersion")) wrapper.KgsmVersion = ReadString(ref reader);
-            else if (Is(name, "V"))
-                wrapper.SchemaVersion = reader.TokenType == JsonTokenType.Null ? null : reader.GetInt32();
+            else if (Is(name, "V")) wrapper.SchemaVersion = ReadInt(ref reader);
             else if (Is(name, "ProducerVersion")) wrapper.ProducerVersion = ReadString(ref reader);
             else if (Is(name, "OpId")) wrapper.OpId = ReadString(ref reader);
             else if (Is(name, "RunId")) wrapper.RunId = ReadString(ref reader);
@@ -125,6 +123,23 @@ public sealed class EventWrapperConverter : JsonConverter<EventWrapper>
         JsonTokenType.String => reader.GetString(),
         _ => throw new JsonException($"Expected a string, found {reader.TokenType}."),
     };
+
+    private static DateTimeOffset? ReadInstant(ref Utf8JsonReader reader)
+    {
+        if (reader.TokenType == JsonTokenType.Null) return null;
+        if (reader.TokenType == JsonTokenType.String && reader.TryGetDateTimeOffset(out DateTimeOffset instant))
+            return instant;
+
+        throw new JsonException("Expected an ISO 8601 timestamp.");
+    }
+
+    private static int? ReadInt(ref Utf8JsonReader reader)
+    {
+        if (reader.TokenType == JsonTokenType.Null) return null;
+        if (reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out int number)) return number;
+
+        throw new JsonException("Expected an integer.");
+    }
 
     private static string[]? ReadStrings(ref Utf8JsonReader reader)
     {
