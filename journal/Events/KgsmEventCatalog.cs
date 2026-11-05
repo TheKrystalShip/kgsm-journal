@@ -347,6 +347,15 @@ public static class KgsmEventCatalog
             new EventDescriptor("library.failed", EventSubject.Library, EventWeight.Fact,
                 EventOutcome.Failure, LibraryOutcomeFields, typeof(LibraryOutcomeEventData), Known: true),
 
+            // A command the API issued that ended without doing the thing, told apart by the type that fired.
+            // The job and batch ids are opaque to a reader, so a one-line surface prints neither.
+            Instance<CommandOutcomeEventData>("command.failed", EventWeight.Fact, EventOutcome.Failure,
+                CommandOutcomeFields, severity: EventSeverity.Danger),
+            Instance<CommandOutcomeEventData>("command.refused", EventWeight.Fact, EventOutcome.Failure,
+                CommandOutcomeFields, severity: EventSeverity.Warn),
+            Instance<CommandOutcomeEventData>("command.cancelled", EventWeight.Fact, EventOutcome.Neutral,
+                CommandOutcomeFields),
+
             // A name in the cluster's zone, as the DNS anchor journals it. Facts: whoever bookmarked or
             // told players a name is affected when it appears or leaves, and the audit view must keep it.
             // Publishing is the routine good news; a withdrawal is neutral, as the anchor writes it.
@@ -611,6 +620,14 @@ public static class KgsmEventCatalog
         new(type, EventSubject.Name, EventWeight.Fact, outcome,
             [Field("Name", FieldShape.Text), Field("Kind", FieldShape.Text), Field("Member", FieldShape.Text),
              Field("Key", FieldShape.Text), .. extra], typeof(TData), Known: true);
+
+    /// <summary>The fields <c>command.failed</c>, <c>command.refused</c> and <c>command.cancelled</c> carry.</summary>
+    private static readonly EventField[] CommandOutcomeFields =
+    [
+        Field("Verb", FieldShape.Text), Field("JobId", FieldShape.Opaque), Field("BatchId", FieldShape.Opaque),
+        Field("Error", FieldShape.Text), Field("ExitCode", FieldShape.Text),
+        Field("FromLibrary", FieldShape.Text), Field("ToLibrary", FieldShape.Text),
+    ];
 
     /// <summary>The fields both <c>library.renamed</c> and <c>library.failed</c> carry.</summary>
     private static readonly EventField[] LibraryOutcomeFields =

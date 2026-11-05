@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0]
+
+### Added — the API's command outcome events are in the catalog
+
+`CommandOutcomeEventData` is the payload of `command.failed`, `command.refused` and `command.cancelled`, which kgsm-api
+journals when a command it issued ends without doing the thing. The catalog classifies them, so a line carrying one reads
+as that type instead of as `UnrecognizedEventData`.
+
 ## [3.0.2]
 
 ### Fixed — a malformed timestamp or schema version is a `JsonException`
