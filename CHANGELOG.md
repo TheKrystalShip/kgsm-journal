@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `JournalReadOptions` carries what a reader needs (journal directory, cursor path, start position, history
   scan budget); `AddKgsmJournalReader` and `AddKgsmJournalFederation` register the readers.
 - The journal tests moved with the code (`journal.Tests`).
+- The repository holds the Journal package only. The engine client, the models, the watchdog and firewall
+  clients and the file helpers are gone from it: they ship from the engine (`TheKrystalShip.KGSM.Engine`,
+  `TheKrystalShip.KGSM.Engine.Contracts`), the watchdog (`TheKrystalShip.KGSM.Watchdog.Client`) and the firewall
+  (`TheKrystalShip.KGSM.Firewall.Contracts`), or live in the one component that uses them.
 
 ### Fixed — concurrent appends keep every line (`TheKrystalShip.KGSM.Journal` 2.5.0-dev.3)
 

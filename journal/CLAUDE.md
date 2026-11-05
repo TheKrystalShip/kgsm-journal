@@ -1,7 +1,7 @@
 # The journal package
 
-The writer side of the event journal, the conformance checker beside the writer that has to satisfy
-it, and `LeafLifecycle` — in a package of its own so a leaf that cannot take kgsm-lib still gets them.
+The event journal: the writer, the reader, the conformance checker beside the writer that has to satisfy
+it, and `LeafLifecycle`.
 
 **A run of NUL bytes in a segment is a hole, not a line.** The filesystem records the file as longer
 than the bytes it has written, and a machine that goes down in between leaves zeros standing where an

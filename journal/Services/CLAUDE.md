@@ -1,38 +1,4 @@
-# Services: process execution, the event system, reading history
-
-## Process execution
-
-All KGSM commands execute via `ProcessRunner.Execute()`; `KgsmResult` wraps `ProcessResult` (Stdout,
-Stderr, ExitCode). There is no built-in validation of the KGSM path — ensure `kgsm.sh` exists before
-instantiating services.
-
-```csharp
-ProcessResult result = _processRunner.Execute(_kgsmPath, "--instances", "--json");
-if (result.ExitCode != 0) {
-    _logger.LogError("Command failed: {Error}", result.Stderr);
-    throw new KgsmException($"Failed: {result.Stderr}");
-}
-```
-
-**Three execution shapes.** `Execute`/`ExecuteAsync` buffer all output. `ExecuteWithInput` writes a small
-text payload (a transfer manifest) to stdin and buffers the output, because the transfer verbs print a
-verdict on stdout even when they exit non-zero. `ExecuteStreamingAsync` is the bulk path: the caller's
-`Stream` is copied to stdin and stdout is copied to the caller's `Stream` in fixed-size chunks, stderr is
-captured under a cap, and nothing is held whole, since a transfer part can be tens of gigabytes. It has
-no timeout; cancelling the token kills the process tree and throws `OperationCanceledException`. A
-stream that fails kills the process and surfaces its own exception. The bytes written to the destination
-are data only when `StreamResult.ExitCode` is 0.
-
-**Transfer verbs** (`InstanceService`, `../Core/Models/InstanceTransfer.cs`): `ExportManifest`,
-`ExportPartAsync`, `CommitExport`, `Unlock`, `ImportCheck`, `ImportBegin`, `ImportPartAsync`,
-`ImportFinish`, `ImportAbort`, `ImportList`, and `IBlueprintService.BlueprintRequirements`. A verb that
-refuses reports it in the result's exit code (`TransferExitCodes`); `ImportCheck` and a refused
-`ImportBegin` carry the engine's verdict, whose `code` strings (`ImportRefusalCodes`) are what a caller
-branches on, with every refusal listed. A success whose output cannot be read throws `KgsmException`
-rather than returning an assumed value.
-
-`LogSubscriptionService` spawns a real `kgsm --follow` process; `LogParser` (`../Utilities/`) handles
-ISO8601 (Z suffix) and syslog formats differently.
+# Services: the event system and reading history
 
 ## The event system
 
@@ -69,7 +35,7 @@ incomplete rather than implying coverage it does not have.
 writes payloads compact for that reason, and only complete lines are dispatched. Anything that rewrites
 a segment in place (a log rotator's `copytruncate`) invalidates every cursor into it, which is why
 retention deletes whole segments and never truncates one. Every line passes through
-`JournalLine.WithoutHole` first (`../../journal/CLAUDE.md`).
+`JournalLine.WithoutHole` first (`../CLAUDE.md`).
 
 **Every event carries its position, and its name.** `IEventSource.EventReceived` and
 `IEventService.RegisterRawHandler` both take an `EventPosition` (segment + byte offset) alongside the
@@ -101,7 +67,7 @@ size of the page.
 The three fields that keep an answer honest are not optional decoration. `CoverageFrom` is the oldest
 moment the journal can still answer for — a window reaching earlier is answered only from there.
 `JournalReadable` separates "cannot see" from "nothing happened". `Truncated` says the scan hit
-`KgsmOptions.EventHistoryScanBudgetBytes` and the page is a prefix. A consumer that drops these turns a
+`JournalReadOptions.EventHistoryScanBudgetBytes` and the page is a prefix. A consumer that drops these turns a
 partial history into one that reads as complete, which is the exact failure the journal exists to
 prevent.
 
