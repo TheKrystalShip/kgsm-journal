@@ -15,7 +15,7 @@ namespace TheKrystalShip.KGSM.Tests.Services;
 /// kgsm but had no C# type, so they were dropped as "Unknown event type". These
 /// tests pin (1) the real wire payloads for the newly-aligned events, captured
 /// verbatim from <c>_build_event_payload</c>, and (2) the AOT invariant that
-/// every event type is registered in <see cref="KgsmJsonContext"/> — an
+/// every event type is registered in <see cref="JournalJsonContext"/> — an
 /// unregistered type throws at runtime on the reflection-free deserialize path.
 /// </summary>
 public class EventDeserializationTests
@@ -26,11 +26,11 @@ public class EventDeserializationTests
         string wireJson, Type targetType)
     {
         EventWrapper? wrapper =
-            JsonSerializer.Deserialize(wireJson, KgsmJsonContext.Default.EventWrapper);
+            JsonSerializer.Deserialize(wireJson, JournalJsonContext.Default.EventWrapper);
         Assert.NotNull(wrapper);
 
         var data = JsonSerializer.Deserialize(
-            wrapper!.Data.GetRawText(), targetType, KgsmJsonContext.Default)
+            wrapper!.Data.GetRawText(), targetType, JournalJsonContext.Default)
             as KgsmEventDataBase;
 
         return (wrapper.EventType, data);
@@ -42,11 +42,11 @@ public class EventDeserializationTests
         string wireJson, Type targetType)
     {
         EventWrapper? wrapper =
-            JsonSerializer.Deserialize(wireJson, KgsmJsonContext.Default.EventWrapper);
+            JsonSerializer.Deserialize(wireJson, JournalJsonContext.Default.EventWrapper);
         Assert.NotNull(wrapper);
 
         var data = JsonSerializer.Deserialize(
-            wrapper!.Data.GetRawText(), targetType, KgsmJsonContext.Default)
+            wrapper!.Data.GetRawText(), targetType, JournalJsonContext.Default)
             as EventDataBase;
 
         return (wrapper.EventType, data);
@@ -129,7 +129,7 @@ public class EventDeserializationTests
     public void CrashedEvent_DeserializesExitCodeAndRestarts_WithSystemProvenance()
     {
         EventWrapper? wrapper =
-            JsonSerializer.Deserialize(CrashedWireJson, KgsmJsonContext.Default.EventWrapper);
+            JsonSerializer.Deserialize(CrashedWireJson, JournalJsonContext.Default.EventWrapper);
         Assert.NotNull(wrapper);
         // Autonomous engine action: who = system, surface = system.
         Assert.Equal("system", wrapper!.Actor);
@@ -286,7 +286,7 @@ public class EventDeserializationTests
     public void PlayerJoinedEvent_DeserializesIdAndName_WithSystemProvenance()
     {
         EventWrapper? wrapper =
-            JsonSerializer.Deserialize(PlayerJoinedWireJson, KgsmJsonContext.Default.EventWrapper);
+            JsonSerializer.Deserialize(PlayerJoinedWireJson, JournalJsonContext.Default.EventWrapper);
         Assert.NotNull(wrapper);
         // Autonomous observation forwarded by the watchdog: who = system, surface = system.
         Assert.Equal("system", wrapper!.Actor);
@@ -377,7 +377,7 @@ public class EventDeserializationTests
         // a moderation event is a human action and must stay attributable to whoever
         // caused it.
         EventWrapper? wrapper =
-            JsonSerializer.Deserialize(PlayerBannedWireJson, KgsmJsonContext.Default.EventWrapper);
+            JsonSerializer.Deserialize(PlayerBannedWireJson, JournalJsonContext.Default.EventWrapper);
 
         Assert.NotNull(wrapper);
         Assert.Equal("heisen", wrapper!.Actor);
@@ -395,7 +395,7 @@ public class EventDeserializationTests
     public void EventWrapper_SurfacesEnvelopeMetadata_FromEnrichedWireJson()
     {
         EventWrapper? wrapper =
-            JsonSerializer.Deserialize(EnrichedWireJson, KgsmJsonContext.Default.EventWrapper);
+            JsonSerializer.Deserialize(EnrichedWireJson, JournalJsonContext.Default.EventWrapper);
 
         Assert.NotNull(wrapper);
         Assert.Equal("server.started", wrapper!.EventType);
@@ -417,7 +417,7 @@ public class EventDeserializationTests
             """{"EventType":"server.started","Data":{"InstanceName":"x"}}""";
 
         EventWrapper? wrapper =
-            JsonSerializer.Deserialize(minimalWire, KgsmJsonContext.Default.EventWrapper);
+            JsonSerializer.Deserialize(minimalWire, JournalJsonContext.Default.EventWrapper);
 
         Assert.NotNull(wrapper);
         Assert.Null(wrapper!.Actor);
@@ -438,7 +438,7 @@ public class EventDeserializationTests
         // instance-only walk would leave exactly those unguarded.
         static bool IsRegistered(Type t)
         {
-            try { return KgsmJsonContext.Default.GetTypeInfo(t) is not null; }
+            try { return JournalJsonContext.Default.GetTypeInfo(t) is not null; }
             catch { return false; }
         }
 
@@ -449,7 +449,7 @@ public class EventDeserializationTests
             .ToList();
 
         Assert.True(unregistered.Count == 0,
-            "Event types missing [JsonSerializable] in KgsmJsonContext: "
+            "Event types missing [JsonSerializable] in JournalJsonContext: "
             + string.Join(", ", unregistered));
     }
 
@@ -823,7 +823,7 @@ public class EventDeserializationTests
     public void BlueprintEvent_CarriesEnvelopeProvenance()
     {
         EventWrapper? wrapper =
-            JsonSerializer.Deserialize(BlueprintCreatedWireJson, KgsmJsonContext.Default.EventWrapper);
+            JsonSerializer.Deserialize(BlueprintCreatedWireJson, JournalJsonContext.Default.EventWrapper);
 
         Assert.NotNull(wrapper);
         Assert.Equal("heisen", wrapper!.Actor);   // the engine's OS-user fallback

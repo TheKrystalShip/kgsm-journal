@@ -69,7 +69,7 @@ public sealed class EventJournalFederationTests : IDisposable
     private FederatedEventJournalHistory Federated(params JournalSource[] sources)
         => new(
             sources,
-            KgsmOptions.DefaultEventHistoryScanBudgetBytes,
+            JournalReadOptions.DefaultEventHistoryScanBudgetBytes,
             LoggerFactory(),
             new Mock<ILogger<FederatedEventJournalHistory>>().Object);
 
@@ -214,7 +214,7 @@ public sealed class EventJournalFederationTests : IDisposable
         await writer.AppendAsync(EventName.Parse("server.ready"), Payload("""{"InstanceName":"Ketchup"}"""));
 
         string line = SoleLine(DirectoryFor("watchdog"));
-        EventWrapper? envelope = JsonSerializer.Deserialize(line, KgsmJsonContext.Default.EventWrapper);
+        EventWrapper? envelope = JsonSerializer.Deserialize(line, JournalJsonContext.Default.EventWrapper);
 
         Assert.NotNull(envelope);
         Assert.Equal(2, envelope!.SchemaVersion);
@@ -464,7 +464,7 @@ public sealed class EventJournalFederationTests : IDisposable
     {
         EventHistoryPage page = await new FederatedEventJournalHistory(
                 [],
-                KgsmOptions.DefaultEventHistoryScanBudgetBytes,
+                JournalReadOptions.DefaultEventHistoryScanBudgetBytes,
                 new Mock<ILoggerFactory>().Object,
                 new Mock<ILogger<FederatedEventJournalHistory>>().Object)
             .QueryAsync(new EventHistoryQuery());
@@ -482,7 +482,7 @@ public sealed class EventJournalFederationTests : IDisposable
 
         Assert.Throws<ArgumentException>(() => new FederatedEventJournalHistory(
             sources,
-            KgsmOptions.DefaultEventHistoryScanBudgetBytes,
+            JournalReadOptions.DefaultEventHistoryScanBudgetBytes,
             new Mock<ILoggerFactory>().Object,
             new Mock<ILogger<FederatedEventJournalHistory>>().Object));
     }
@@ -514,7 +514,7 @@ public sealed class EventJournalFederationTests : IDisposable
     {
         EventWrapper? v0 = JsonSerializer.Deserialize(
             """{"EventType":"server.started","Data":{},"KGSMVersion":"3.12.0-rc18"}""",
-            KgsmJsonContext.Default.EventWrapper);
+            JournalJsonContext.Default.EventWrapper);
 
         Assert.NotNull(v0);
         Assert.Null(v0!.SchemaVersion);
@@ -529,7 +529,7 @@ public sealed class EventJournalFederationTests : IDisposable
         // work populates them without another envelope change.
         EventWrapper? v1 = JsonSerializer.Deserialize(
             """{"V":1,"EventType":"server.ready","Data":{},"OpId":"9f3c","RunId":"7a1b","During":["abcd","ef01"]}""",
-            KgsmJsonContext.Default.EventWrapper);
+            JournalJsonContext.Default.EventWrapper);
 
         Assert.NotNull(v1);
         Assert.Equal(1, v1!.SchemaVersion);

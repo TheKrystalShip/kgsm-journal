@@ -93,14 +93,14 @@ public sealed class LeafLifecycleContractTests : IDisposable
     public void An_emitted_line_reads_back_into_its_payload_class(string eventType)
     {
         // The registration this proves is the one that fails at RUNTIME, not at build: the library is
-        // reflection-free for its AOT consumers, so a payload type missing from KgsmJsonContext throws
+        // reflection-free for its AOT consumers, so a payload type missing from JournalJsonContext throws
         // NotSupportedException the first time a consumer reads one of these lines.
         string data = DataJsonFor(eventType);
         Type payload = KgsmEventCatalog.Describe(eventType).PayloadType!;
 
-        JsonTypeInfo? info = KgsmJsonContext.Default.GetTypeInfo(payload);
+        JsonTypeInfo? info = JournalJsonContext.Default.GetTypeInfo(payload);
 
-        Assert.True(info is not null, $"{payload.Name} is not registered in KgsmJsonContext");
+        Assert.True(info is not null, $"{payload.Name} is not registered in JournalJsonContext");
 
         object? read = JsonSerializer.Deserialize(data, info!);
 

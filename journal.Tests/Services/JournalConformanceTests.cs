@@ -288,7 +288,7 @@ public sealed class JournalConformanceTests : IDisposable
         var services = new ServiceCollection();
         services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
-        services.AddKgsmServices(KgsmOptionsForTests());
+        services.AddKgsmJournalReader(ReaderOptionsForTests());
 
         using ServiceProvider provider = services.BuildServiceProvider();
 
@@ -306,7 +306,7 @@ public sealed class JournalConformanceTests : IDisposable
         var services = new ServiceCollection();
         services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
-        services.AddKgsmServices(KgsmOptionsForTests());
+        services.AddKgsmJournalReader(ReaderOptionsForTests());
         services.AddKgsmJournalFederation(engineJournalDirectory: _root, stateRoot: _root);
         services.AddSingleton(own);
 
@@ -733,22 +733,21 @@ public sealed class JournalConformanceTests : IDisposable
 
         if (servicesFirst)
         {
-            services.AddKgsmServices(KgsmOptionsForTests());
+            services.AddKgsmJournalReader(ReaderOptionsForTests());
             services.AddKgsmJournalFederation(engineJournalDirectory: _root, stateRoot: _root);
         }
         else
         {
             services.AddKgsmJournalFederation(engineJournalDirectory: _root, stateRoot: _root);
-            services.AddKgsmServices(KgsmOptionsForTests());
+            services.AddKgsmJournalReader(ReaderOptionsForTests());
         }
 
         return services.BuildServiceProvider();
     }
 
     /// <summary>Options pointed at this test's own root, so nothing reads the machine's journals.</summary>
-    private KgsmOptions KgsmOptionsForTests() => new()
+    private JournalReadOptions ReaderOptionsForTests() => new()
     {
-        KgsmPath = Path.Combine(_root, "kgsm.sh"),
         EventJournalDirectory = Path.Combine(_root, "kgsm", "events"),
     };
 

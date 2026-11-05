@@ -8,12 +8,12 @@
 
     <PackageId>TheKrystalShip.KGSM.Journal</PackageId>
     <Authors>Heisenberg</Authors>
-    <Version>2.5.0-dev.3</Version>
+    <Version>2.6.0-dev.1</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageProjectUrl>https://github.com/TheKrystalShip/KGSM-Lib</PackageProjectUrl>
     <RepositoryUrl>https://github.com/TheKrystalShip/KGSM-Lib</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
-    <Description>Appends events to a KGSM producer&apos;s own append-only event journal — the envelope, its write half, and the conformance rules a reader checks it against.</Description>
+    <Description>The KGSM event journal: the envelope and its writer, the conformance rules, the federated reader with its cursors and history, and the event vocabulary and payload catalog.</Description>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <NeutralLanguage>en</NeutralLanguage>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

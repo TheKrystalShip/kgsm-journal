@@ -1,4 +1,3 @@
-using TheKrystalShip.KGSM.Core.Models.Enums;
 using TheKrystalShip.KGSM.Events;
 
 namespace TheKrystalShip.KGSM.Tests.Services;

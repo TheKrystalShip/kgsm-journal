@@ -53,9 +53,8 @@ public sealed class EventJournalReaderTests : IDisposable
 
     private EventJournalReader CreateReader(EventStartPosition startPosition, IEventCursorStore cursors)
         => new(
-            new KgsmOptions
+            new JournalReadOptions
             {
-                KgsmPath = "/usr/local/bin/kgsm",
                 EventJournalDirectory = _directory,
                 EventStartPosition = startPosition
             },
@@ -534,9 +533,8 @@ public sealed class EventJournalReaderTests : IDisposable
     [Fact]
     public void Constructor_WithoutAJournalDirectory_Throws()
     {
-        var options = new KgsmOptions
+        var options = new JournalReadOptions
         {
-            KgsmPath = "/usr/local/bin/kgsm",
             EventJournalDirectory = string.Empty
         };
 

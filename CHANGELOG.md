@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — the journal's reader side (`TheKrystalShip.KGSM.Journal` 2.6.0-dev.1)
+
+- The reader half of the journal lives in the Journal package: `EventJournalReader`, `EventJournalHistory`,
+  `FederatedEventSource`, `FederatedEventJournalHistory`, `JournalDiscovery`, the cursor stores, `EventService`,
+  `AuditId`, the event envelope (`EventWrapper`), the event vocabulary and payload catalog
+  (`KgsmEventCatalog`, the payload classes, the assistant and reactor contracts) and `JournalJsonContext`, the
+  source-generated serializer for all of them. The namespaces are the ones these types lived under.
+- `JournalReadOptions` carries what a reader needs (journal directory, cursor path, start position, history
+  scan budget); `AddKgsmJournalReader` and `AddKgsmJournalFederation` register the readers.
+- The journal tests moved with the code (`journal.Tests`).
+
 ### Fixed — concurrent appends keep every line (`TheKrystalShip.KGSM.Journal` 2.5.0-dev.3)
 
 - `EventJournalWriter` writes each line with one `write` on a descriptor opened `O_APPEND`, through

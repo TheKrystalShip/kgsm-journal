@@ -54,7 +54,7 @@ public class AccessEventTests
             {"Id":"cinema","Name":"Krystal Cinema","Client":"cinema-web","Actor":"local:owner","Origin":"ui"}
             """;
 
-        var data = JsonSerializer.Deserialize(json, KgsmJsonContext.Default.ApplicationEventData)!;
+        var data = JsonSerializer.Deserialize(json, JournalJsonContext.Default.ApplicationEventData)!;
 
         Assert.Equal("cinema", data.Id);
         Assert.Equal("Krystal Cinema", data.Name);
@@ -69,7 +69,7 @@ public class AccessEventTests
              "ActedBy":"cinema-bot","Reason":"account_unknown","Actor":"discord:1234","Origin":"discord"}
             """;
 
-        var data = JsonSerializer.Deserialize(json, KgsmJsonContext.Default.TokenExchangeEventData)!;
+        var data = JsonSerializer.Deserialize(json, JournalJsonContext.Default.TokenExchangeEventData)!;
 
         Assert.Equal("cinema-bot", data.Client);
         Assert.Equal("cinema", data.Application);
@@ -95,7 +95,7 @@ public class AccessEventTests
              "Scope":"instance:walter/terraria#9f3c","AuthorityVersion":12,"Actor":"local:owner","Origin":"ui"}
             """;
 
-        var data = JsonSerializer.Deserialize(json, KgsmJsonContext.Default.AssignmentEventData)!;
+        var data = JsonSerializer.Deserialize(json, JournalJsonContext.Default.AssignmentEventData)!;
 
         Assert.Equal("asg_1", data.AssignmentId);
         Assert.Equal("usr_1", data.UserId);
@@ -112,7 +112,7 @@ public class AccessEventTests
             {"Member":"walter","Added":["reactor:rules.write"],"Removed":[],"AuthorityVersion":3,"Actor":"system:walter"}
             """;
 
-        var data = JsonSerializer.Deserialize(json, KgsmJsonContext.Default.CatalogEventData)!;
+        var data = JsonSerializer.Deserialize(json, JournalJsonContext.Default.CatalogEventData)!;
 
         Assert.Equal("walter", data.Member);
         Assert.Equal(["reactor:rules.write"], data.Added!);
@@ -126,7 +126,7 @@ public class AccessEventTests
             {"AccountId":"usr_svc","Service":null,"Action":"kgsm:server.restart","Scope":"node:walter","Automatic":true,"AuthorityVersion":4}
             """;
 
-        var data = JsonSerializer.Deserialize(json, KgsmJsonContext.Default.ServiceRequirementEventData)!;
+        var data = JsonSerializer.Deserialize(json, JournalJsonContext.Default.ServiceRequirementEventData)!;
 
         Assert.True(data.Automatic);
         Assert.Equal("node:walter", data.Scope);

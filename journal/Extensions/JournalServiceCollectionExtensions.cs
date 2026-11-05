@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using TheKrystalShip.KGSM.Core.Interfaces;
 using TheKrystalShip.KGSM.Core.Models;
@@ -115,6 +116,169 @@ public static class JournalServiceCollectionExtensions
             options, sp.GetRequiredService<ILogger<EventJournalWriter>>()));
 
         return services;
+    }
+
+    /// <summary>
+    /// Registers a reader of the engine's journal: the event source, the event service, the cursor store
+    /// and the history query.
+    /// </summary>
+    /// <remarks>
+    /// A consumer that keeps its cursor in its own database registers its own <see cref="IEventCursorStore"/>
+    /// after this call, which wins by last-registration. <see cref="AddKgsmJournalFederation"/> replaces the
+    /// single-journal source and history with the federated pair whichever order the two are called in.
+    /// </remarks>
+    public static IServiceCollection AddKgsmJournalReader(this IServiceCollection services, JournalReadOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(services, nameof(services));
+        ArgumentNullException.ThrowIfNull(options, nameof(options));
+
+        services.AddSingleton(options);
+        services.AddSingleton<IEventService, EventService>();
+        services.AddSingleton<IEventCursorStore>(sp => string.IsNullOrWhiteSpace(options.EventCursorPath)
+            ? new NullEventCursorStore()
+            : new FileEventCursorStore(options, sp.GetRequiredService<ILogger<FileEventCursorStore>>()));
+        services.AddSingleton<IEventJournalReader, EventJournalReader>();
+        services.AddSingleton<EventJournalHistory>();
+        AddJournalResolution(services);
+        return services;
+    }
+
+    /// <summary>
+    /// Reads every producer's event journal instead of only the engine's.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Call <b>after</b> <see cref="AddKgsmJournalReader(IServiceCollection, JournalReadOptions)"/>: this replaces
+    /// that call's <see cref="IEventJournalHistory"/> and <see cref="IEventSource"/> with the
+    /// federated pair, by last-registration. Every handler a consumer has registered keeps working
+    /// unchanged — <c>EventService</c> resolves <see cref="IEventSource"/> and never learns what backs
+    /// it, which is the whole point of that indirection.
+    /// </para>
+    /// <para>
+    /// <b>Called before it, this does nothing and says nothing.</b> The later
+    /// <c>AddKgsmServices</c> re-registers the single-journal pair over this one, leaving a consumer
+    /// tailing the engine alone while believing it tails every producer — which reads as a quiet host
+    /// rather than as a misconfiguration. There is no error to catch: both registrations are valid, and
+    /// only the order decides which wins.
+    /// </para>
+    /// <para>
+    /// Which journals exist is discovered by finding them on disk, so this needs no list of leaves and a
+    /// leaf that starts writing one later costs no rebuild. A consumer whose host is laid out
+    /// unconventionally registers its own <see cref="IJournalDiscovery"/> after this call.
+    /// </para>
+    /// <para>
+    /// The federated source keeps <b>one cursor per producer</b>, which is a different store from the
+    /// single-journal <see cref="IEventCursorStore"/> and cannot be migrated from it: a position in the
+    /// engine's journal says nothing about a position in anyone else's. A consumer switching over
+    /// therefore starts each journal from <paramref name="startPosition"/>, and one that indexes events
+    /// wants <see cref="EventStartPosition.CursorOrOldest"/> so it can rebuild.
+    /// </para>
+    /// </remarks>
+    /// <param name="services">The IServiceCollection to add services to.</param>
+    /// <param name="cursorPath">
+    /// Where the per-producer cursor map is kept. Null or blank keeps **no** positions, so every
+    /// journal starts from <paramref name="startPosition"/> on every run — what a consumer that
+    /// announces events onward rather than deriving durable state from them actually wants, since
+    /// resuming would re-announce a backlog.
+    /// </param>
+    /// <param name="startPosition">Where a journal with no stored position begins.</param>
+    /// <param name="engineJournalDirectory">
+    /// Where kgsm's own journal lives. Null uses <see cref="JournalReadOptions.DefaultEventJournalDirectory"/>.
+    /// </param>
+    /// <param name="stateRoot">
+    /// Where each producer's state directory lives, each holding its journal in an <c>events</c>
+    /// subdirectory. Null uses <see cref="JournalDiscovery.DefaultStateRoot"/>.
+    /// </param>
+    /// <param name="scanBudgetBytes">
+    /// The scan budget allowed for each journal in a history query. Non-positive uses
+    /// <see cref="JournalReadOptions.DefaultEventHistoryScanBudgetBytes"/>. It applies <em>per journal</em>,
+    /// so each answers to the same depth whatever the fleet size, at the cost of total work scaling
+    /// with the number of producers.
+    /// </param>
+    /// <param name="namedJournals">
+    /// Journals to read that the scan would not find, because their producer writes somewhere other
+    /// than its own state directory. The case that needs it is a consumer whose OWN journal path is
+    /// configurable: left to the scan, it would write a record it could not then read back.
+    /// </param>
+    /// <returns>The IServiceCollection so that additional calls can be chained.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when services is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when cursorPath is null, empty, or whitespace.</exception>
+    public static IServiceCollection AddKgsmJournalFederation(
+        this IServiceCollection services,
+        string? cursorPath = null,
+        EventStartPosition startPosition = EventStartPosition.CursorOrOldest,
+        string? engineJournalDirectory = null,
+        string? stateRoot = null,
+        long scanBudgetBytes = 0,
+        IReadOnlyList<JournalSource>? namedJournals = null)
+    {
+        ArgumentNullException.ThrowIfNull(services, nameof(services));
+
+        long budget = scanBudgetBytes > 0 ? scanBudgetBytes : JournalReadOptions.DefaultEventHistoryScanBudgetBytes;
+
+        services.AddSingleton<IJournalDiscovery>(sp => new JournalDiscovery(
+            engineJournalDirectory ?? JournalReadOptions.DefaultEventJournalDirectory,
+            stateRoot,
+            sp.GetRequiredService<ILogger<JournalDiscovery>>(),
+            namedJournals));
+
+        services.AddSingleton<IFederatedEventCursorStore>(sp => string.IsNullOrWhiteSpace(cursorPath)
+            ? new NullFederatedEventCursorStore()
+            : new FileFederatedEventCursorStore(
+                cursorPath, sp.GetRequiredService<ILogger<FileFederatedEventCursorStore>>()));
+
+        services.AddSingleton(sp => new FederatedEventJournalHistory(
+            sp.GetRequiredService<IJournalDiscovery>().Discover(),
+            budget,
+            sp.GetRequiredService<ILoggerFactory>(),
+            sp.GetRequiredService<ILogger<FederatedEventJournalHistory>>()));
+
+        services.AddSingleton(sp => new FederatedEventSource(
+            sp.GetRequiredService<IJournalDiscovery>().Discover(),
+            sp.GetRequiredService<IFederatedEventCursorStore>(),
+            startPosition,
+            sp.GetRequiredService<ILoggerFactory>(),
+            sp.GetRequiredService<ILogger<FederatedEventSource>>()));
+
+        AddJournalResolution(services);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers how <see cref="IEventSource"/> and <see cref="IEventJournalHistory"/> are decided.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Which reader a consumer gets is resolved, not raced.</b> Both
+    /// <see cref="AddKgsmJournalReader(IServiceCollection, JournalReadOptions)"/> and
+    /// <see cref="AddKgsmJournalFederation"/> register this same rule, and it is registered with
+    /// <c>TryAdd</c>, so calling them in either order produces the same container. The rule itself is
+    /// the whole point: <b>federated if a federated reader was registered, single-journal
+    /// otherwise</b> — a question answered when the container is built, from what is actually in it,
+    /// rather than by whichever call happened to come last.
+    /// </para>
+    /// <para>
+    /// The alternative this replaces is worth naming, because it has no symptom. Two valid
+    /// <c>AddSingleton</c> registrations of one interface differ only in call order, and a consumer
+    /// that federated too early kept reading its single journal **successfully** — reporting a healthy
+    /// journal and a quiet host, while the events it wanted sat in four other files. There is no
+    /// exception to catch and nothing degrades: one journal is being read correctly.
+    /// </para>
+    /// <para>
+    /// A consumer with a genuine reason to supply its own still can — an explicit registration after
+    /// these calls wins by last-registration, exactly as it does for <see cref="IEventCursorStore"/>.
+    /// </para>
+    /// </remarks>
+    private static void AddJournalResolution(IServiceCollection services)
+    {
+        services.TryAddSingleton<IEventSource>(sp =>
+            sp.GetService<FederatedEventSource>()
+            ?? (IEventSource)sp.GetRequiredService<IEventJournalReader>());
+
+        services.TryAddSingleton<IEventJournalHistory>(sp =>
+            sp.GetService<FederatedEventJournalHistory>()
+            ?? (IEventJournalHistory)sp.GetRequiredService<EventJournalHistory>());
     }
 
     private static void TryCreateDirectory(string directory)

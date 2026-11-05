@@ -70,11 +70,10 @@ public sealed class EventJournalHistoryTests : IDisposable
     private EventJournalHistory CreateHistory(
         long? budgetBytes = null, Mock<ILogger<EventJournalHistory>>? logger = null)
         => new(
-            new KgsmOptions
+            new JournalReadOptions
             {
-                KgsmPath = "/usr/local/bin/kgsm",
                 EventJournalDirectory = _directory,
-                EventHistoryScanBudgetBytes = budgetBytes ?? KgsmOptions.DefaultEventHistoryScanBudgetBytes
+                EventHistoryScanBudgetBytes = budgetBytes ?? JournalReadOptions.DefaultEventHistoryScanBudgetBytes
             },
             (logger ?? new Mock<ILogger<EventJournalHistory>>()).Object);
 
@@ -812,9 +811,8 @@ public sealed class EventJournalHistoryTests : IDisposable
         var positions = new List<EventPosition>();
 
         var reader = new EventJournalReader(
-            new KgsmOptions
+            new JournalReadOptions
             {
-                KgsmPath = "/usr/local/bin/kgsm",
                 EventJournalDirectory = _directory,
                 EventStartPosition = EventStartPosition.Oldest
             },
