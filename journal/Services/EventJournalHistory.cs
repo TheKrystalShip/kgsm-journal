@@ -406,12 +406,10 @@ public sealed class EventJournalHistory : IEventJournalHistory
 
                 var entry = new EventHistoryEntry(
                     id, ts, wrapper.EventType,
-                    ReadName(wrapper.Data, "InstanceName"),
-                    ReadName(wrapper.Data, "BlueprintName"),
+                    InstanceOf(wrapper.Data),
+                    BlueprintOf(wrapper.Data),
                     wrapper.Actor, wrapper.Origin, wrapper.Hostname,
-                    wrapper.Data.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null
-                        ? null
-                        : wrapper.Data,
+                    wrapper.Data,
                     // Stamped from the journal this reader was pointed at, never from the line.
                     _producer,
                     wrapper.OpId, wrapper.RunId, wrapper.During,
@@ -467,11 +465,11 @@ public sealed class EventJournalHistory : IEventJournalHistory
             return false;
 
         if (!string.IsNullOrEmpty(query.Instance)
-            && !string.Equals(ReadName(wrapper.Data, "InstanceName"), query.Instance, StringComparison.Ordinal))
+            && !string.Equals(InstanceOf(wrapper.Data), query.Instance, StringComparison.Ordinal))
             return false;
 
         if (!string.IsNullOrEmpty(query.Blueprint)
-            && !string.Equals(ReadName(wrapper.Data, "BlueprintName"), query.Blueprint, StringComparison.Ordinal))
+            && !string.Equals(BlueprintOf(wrapper.Data), query.Blueprint, StringComparison.Ordinal))
             return false;
 
         long tsMs = ts.ToUnixTimeMilliseconds();
@@ -572,19 +570,23 @@ public sealed class EventJournalHistory : IEventJournalHistory
         }
     }
 
-    /// <summary>Reads a string property from an event payload, or null when it carries none.</summary>
-    private static string? ReadName(JsonElement data, string property)
+    /// <summary>The instance a payload names, or null when it carries none.</summary>
+    private static string? InstanceOf(KgsmEventDataBase? data) => NonEmpty(data switch
     {
-        if (data.ValueKind == JsonValueKind.Object
-            && data.TryGetProperty(property, out JsonElement value)
-            && value.ValueKind == JsonValueKind.String)
-        {
-            string? name = value.GetString();
-            return string.IsNullOrEmpty(name) ? null : name;
-        }
+        EventDataBase instance => instance.InstanceName,
+        UnrecognizedEventData unrecognized => unrecognized.InstanceName,
+        _ => null,
+    });
 
-        return null;
-    }
+    /// <summary>The blueprint a payload names, or null when it carries none.</summary>
+    private static string? BlueprintOf(KgsmEventDataBase? data) => NonEmpty(data switch
+    {
+        BlueprintEventDataBase blueprint => blueprint.BlueprintName,
+        UnrecognizedEventData unrecognized => unrecognized.BlueprintName,
+        _ => null,
+    });
+
+    private static string? NonEmpty(string? name) => string.IsNullOrEmpty(name) ? null : name;
 
     /// <summary>
     /// The journal's segment file names, oldest first. Names are dates, so ordinal sort order is

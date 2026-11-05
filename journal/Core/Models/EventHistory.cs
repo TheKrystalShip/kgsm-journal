@@ -1,4 +1,4 @@
-using System.Text.Json;
+using TheKrystalShip.KGSM.Events;
 
 namespace TheKrystalShip.KGSM.Core.Models;
 
@@ -175,7 +175,7 @@ public sealed record EventHistoryEntry(
     string? Actor,
     string? Origin,
     string? Hostname,
-    JsonElement? Data,
+    KgsmEventDataBase? Data,
     string? Producer = null,
     string? OpId = null,
     string? RunId = null,

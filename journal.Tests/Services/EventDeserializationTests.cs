@@ -20,36 +20,23 @@ namespace TheKrystalShip.KGSM.Tests.Services;
 /// </summary>
 public class EventDeserializationTests
 {
-    // Mirrors EventService's deserialize path for a subject the payload does not name as an instance —
-    // the same two steps, resolved against the subject-neutral root.
+    // The envelope's payload arrives as the registered type its event names.
     private static (string EventType, KgsmEventDataBase? Data) DeserializeAny(
         string wireJson, Type targetType)
     {
         EventWrapper? wrapper =
             JsonSerializer.Deserialize(wireJson, JournalJsonContext.Default.EventWrapper);
         Assert.NotNull(wrapper);
+        Assert.IsType(targetType, wrapper!.Data);
 
-        var data = JsonSerializer.Deserialize(
-            wrapper!.Data.GetRawText(), targetType, JournalJsonContext.Default)
-            as KgsmEventDataBase;
-
-        return (wrapper.EventType, data);
+        return (wrapper.EventType, wrapper.Data);
     }
 
-    // Mirrors EventService's deserialize path: EventWrapper first, then the
-    // typed Data payload, both through the source-generated context.
     private static (string EventType, EventDataBase? Data) Deserialize(
         string wireJson, Type targetType)
     {
-        EventWrapper? wrapper =
-            JsonSerializer.Deserialize(wireJson, JournalJsonContext.Default.EventWrapper);
-        Assert.NotNull(wrapper);
-
-        var data = JsonSerializer.Deserialize(
-            wrapper!.Data.GetRawText(), targetType, JournalJsonContext.Default)
-            as EventDataBase;
-
-        return (wrapper.EventType, data);
+        (string eventType, KgsmEventDataBase? data) = DeserializeAny(wireJson, targetType);
+        return (eventType, data as EventDataBase);
     }
 
     // Captured from an older kgsm `_build_event_payload instance_restarted 7dtd standalone`. The
@@ -443,7 +430,7 @@ public class EventDeserializationTests
         }
 
         var unregistered = typeof(KgsmEventDataBase).Assembly.GetTypes()
-            .Where(t => t.IsSubclassOf(typeof(KgsmEventDataBase)) && !t.IsAbstract)
+            .Where(t => t.IsSubclassOf(typeof(KgsmEventDataBase)) && !t.IsAbstract && t != typeof(UnrecognizedEventData))
             .Where(t => !IsRegistered(t))
             .Select(t => t.Name)
             .ToList();
@@ -692,7 +679,7 @@ public class EventDeserializationTests
         // dependency.
         var mapped = new HashSet<Type>(GetEventTypeMapping().Values);
         var missing = typeof(KgsmEventDataBase).Assembly.GetTypes()
-            .Where(t => t.IsSubclassOf(typeof(KgsmEventDataBase)) && !t.IsAbstract)
+            .Where(t => t.IsSubclassOf(typeof(KgsmEventDataBase)) && !t.IsAbstract && t != typeof(UnrecognizedEventData))
             .Where(t => !mapped.Contains(t))
             .Select(t => t.Name)
             .ToList();

@@ -5,9 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.0]
 
-### Added — the journal's reader side (`TheKrystalShip.KGSM.Journal` 2.6.0-dev.1)
+### Changed — an event's payload is the registered type its event names (`TheKrystalShip.KGSM.Journal` 3.0.0)
+
+- `EventWrapper.Data` and `EventHistoryEntry.Data` are `KgsmEventDataBase?`. `EventWrapperConverter` picks the
+  payload's type from the catalog's payload type for the event's current name, and an event the catalog does not
+  classify reads as `UnrecognizedEventData`, which carries the instance and blueprint names a reader filters on. The
+  payload may precede `EventType` in a line. Every payload type is registered in `JournalJsonContext`.
+- `EventPayloads.ScalarText` reads one scalar field of a payload by its JSON name, for a surface driven by the
+  catalog's field list.
+- `AuditId.ForEvent`, the content-derived id nothing used, is gone; ids come from the line's own name or its position.
+
+### Added — the journal's reader side
 
 - The reader half of the journal lives in the Journal package: `EventJournalReader`, `EventJournalHistory`,
   `FederatedEventSource`, `FederatedEventJournalHistory`, `JournalDiscovery`, the cursor stores, `EventService`,

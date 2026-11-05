@@ -333,7 +333,7 @@ public class EventService : IEventService, IAsyncDisposable
             {
                 _logger.LogDebug("Deserializing event data to type {TargetType}", targetType.Name);
 
-                KgsmEventDataBase? eventData = DeserializeEventData(targetType, eventWrapper.Data);
+                KgsmEventDataBase? eventData = eventWrapper.Data;
 
                 if (eventData == null)
                 {
@@ -364,30 +364,6 @@ public class EventService : IEventService, IAsyncDisposable
         {
             _logger.LogError(ex, "Error processing event message");
         }
-    }
-
-    /// <summary>
-    /// Deserializes the event data from JSON to the specified target type.
-    /// </summary>
-    /// <param name="targetType">The type to deserialize to.</param>
-    /// <param name="dataElement">The JSON data to deserialize.</param>
-    /// <returns>The deserialized event data.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if targetType is null.</exception>
-    /// <exception cref="JsonException">Thrown if JSON deserialization fails.</exception>
-    /// <exception cref="NotSupportedException">Thrown if the target type is not supported.</exception>
-    private KgsmEventDataBase? DeserializeEventData(Type targetType, JsonElement dataElement)
-    {
-        ArgumentNullException.ThrowIfNull(targetType, nameof(targetType));
-
-        string json = dataElement.GetRawText();
-
-        _logger.LogTrace("Deserializing JSON: {Json}", json);
-
-        var result = JsonSerializer.Deserialize(json, targetType, JournalJsonContext.Default) as KgsmEventDataBase;
-
-        _logger.LogDebug("Successfully deserialized event data to {TargetType}", targetType.Name);
-
-        return result;
     }
 
     /// <summary>

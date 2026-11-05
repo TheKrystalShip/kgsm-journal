@@ -1,7 +1,4 @@
 using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using TheKrystalShip.KGSM.Conformance;
 
 namespace TheKrystalShip.KGSM.Events;
@@ -13,54 +10,11 @@ namespace TheKrystalShip.KGSM.Events;
 /// shared sequence, a database round-trip, or a network call.
 /// </summary>
 /// <remarks>
-/// Two derivations, for two different situations. <see cref="ForPosition(string, long)"/> keys an event by
-/// where it sits in the journal: unique by construction and ordered like the file, so it is
-/// what the audit trail is keyed on and what paginates it. <see cref="ForEvent"/> keys an
-/// event by its content, for a caller holding an envelope with no position to hand — it
-/// cannot distinguish two identical events emitted within the same second, since the engine's
-/// timestamps carry one-second granularity.
+/// <see cref="ForPosition(string, long)"/> keys an event by where it sits in the journal: unique by
+/// construction and ordered like the file, so it is what the audit trail is keyed on and what paginates it.
 /// </remarks>
 public static class AuditId
 {
-    /// <summary>
-    /// Computes the deterministic id for <paramref name="wrapper"/>.
-    /// </summary>
-    /// <remarks>
-    /// The id is <c>"evt_"</c> followed by the first 16 lowercase hex characters of a
-    /// SHA-256 digest over a canonical, pipe-delimited string built from the
-    /// envelope's identifying fields, in order: <see cref="EventWrapper.Hostname"/>,
-    /// <see cref="EventWrapper.Timestamp"/> as unix milliseconds, <see cref="EventWrapper.EventType"/>,
-    /// the instance name read from the <see cref="EventWrapper.Data"/> payload's
-    /// <c>InstanceName</c> property (host/global events carry none), and a SHA-256
-    /// digest of <see cref="EventWrapper.Data"/>'s raw JSON text — hashed separately
-    /// from (rather than embedded verbatim in) the canonical string so an arbitrarily
-    /// large payload still contributes a fixed-width, collision-resistant component.
-    /// A missing field (null hostname/timestamp/instance, absent data) always
-    /// contributes the same empty/zero form, so the same "nothing here" case hashes
-    /// identically every time it occurs.
-    /// </remarks>
-    /// <param name="wrapper">The event envelope to derive an id for.</param>
-    /// <returns>A stable id of the form <c>evt_&lt;16 lowercase hex chars&gt;</c>.</returns>
-    public static string ForEvent(EventWrapper wrapper)
-    {
-        ArgumentNullException.ThrowIfNull(wrapper);
-
-        string dataHash = ToHexLower(SHA256.HashData(Encoding.UTF8.GetBytes(GetRawDataText(wrapper.Data))));
-        long timestampMs = wrapper.Timestamp?.ToUnixTimeMilliseconds() ?? 0;
-
-        string canonical = string.Join(
-            '|',
-            wrapper.Hostname ?? string.Empty,
-            timestampMs.ToString(CultureInfo.InvariantCulture),
-            wrapper.EventType ?? string.Empty,
-            ExtractInstanceName(wrapper.Data),
-            dataHash);
-
-        string digest = ToHexLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
-
-        return "evt_" + digest[..16];
-    }
-
     /// <summary>
     /// Composes the id for the event stored at a journal position.
     /// </summary>
@@ -210,8 +164,7 @@ public static class AuditId
     /// <param name="segment">The segment stem, without its extension.</param>
     /// <param name="offset">The byte offset.</param>
     /// <returns>
-    /// True when <paramref name="id"/> is a position id. False for anything else — including a
-    /// content-derived <see cref="ForEvent"/> id, which carries no position — leaving the
+    /// True when <paramref name="id"/> is a position id. False for anything else, leaving the
     /// caller to treat it as an unusable cursor rather than a wrong one.
     /// </returns>
     public static bool TryParsePosition(string? id, out string segment, out long offset)
@@ -239,9 +192,8 @@ public static class AuditId
     /// <see cref="ForPosition(string, string, long)"/>.
     /// </summary>
     /// <remarks>
-    /// False for an unprefixed position id as well as for a content-derived
-    /// <see cref="ForEvent"/> one: a caller asking which producer wrote an event must get "this id
-    /// does not say" rather than a guess. The producer is the first field and carries no underscore
+    /// False for an unprefixed position id: a caller asking which producer wrote an event must get
+    /// "this id does not say" rather than a guess. The producer is the first field and carries no underscore
     /// (<see cref="JournalProducer.IsValid"/>), so the split is exact.
     /// </remarks>
     /// <param name="id">The id to parse.</param>
@@ -288,23 +240,4 @@ public static class AuditId
         string name = Path.GetFileName(segment);
         return name.EndsWith(".ndjson", StringComparison.Ordinal) ? name[..^7] : name;
     }
-
-    private static string GetRawDataText(JsonElement data) =>
-        data.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null
-            ? string.Empty
-            : data.GetRawText();
-
-    private static string ExtractInstanceName(JsonElement data)
-    {
-        if (data.ValueKind == JsonValueKind.Object
-            && data.TryGetProperty("InstanceName", out JsonElement instanceName)
-            && instanceName.ValueKind == JsonValueKind.String)
-        {
-            return instanceName.GetString() ?? string.Empty;
-        }
-
-        return string.Empty;
-    }
-
-    private static string ToHexLower(byte[] bytes) => Convert.ToHexStringLower(bytes);
 }

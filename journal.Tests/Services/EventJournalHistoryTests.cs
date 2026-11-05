@@ -787,7 +787,7 @@ public sealed class EventJournalHistoryTests : IDisposable
 
         Assert.Equal("heisen", entry.Actor);
         Assert.NotNull(entry.Data);
-        Assert.Equal("factorio", entry.Data!.Value.GetProperty("InstanceName").GetString());
+        Assert.Equal("factorio", Assert.IsAssignableFrom<EventDataBase>(entry.Data).InstanceName);
     }
 
     [Fact]

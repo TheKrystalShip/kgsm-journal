@@ -10,6 +10,7 @@ namespace TheKrystalShip.KGSM;
 /// </summary>
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(EventWrapper))]
+[JsonSerializable(typeof(UnrecognizedEventData))]
 [JsonSerializable(typeof(EventCursor))]
 [JsonSerializable(typeof(Dictionary<string, EventCursor>))]
 [JsonSerializable(typeof(InstanceCreatedData))]

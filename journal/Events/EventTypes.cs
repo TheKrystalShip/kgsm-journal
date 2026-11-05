@@ -81,12 +81,24 @@ public abstract class LibraryEventDataBase : KgsmEventDataBase
 }
 
 /// <summary>
-/// Represents the wrapper for events received from KGSM — the top-level envelope
-/// around each event's <see cref="Data"/> payload. Mirrors the wire shape emitted
-/// by KGSM's <c>_build_event_payload</c>: <c>EventType</c>, <c>Data</c>, and the
-/// emission metadata (<c>Timestamp</c>, <c>Actor</c>, <c>Origin</c>, <c>Hostname</c>,
-/// <c>KGSMVersion</c>).
+/// The payload of an event the catalog does not classify: only the two names a reader filters on, since
+/// an unclassified event may carry anything and a consumer must not print what it cannot classify.
 /// </summary>
+public class UnrecognizedEventData : KgsmEventDataBase
+{
+    /// <summary>Gets or sets the instance the payload names, or null.</summary>
+    public string? InstanceName { get; set; }
+
+    /// <summary>Gets or sets the blueprint the payload names, or null.</summary>
+    public string? BlueprintName { get; set; }
+}
+
+/// <summary>
+/// Represents the envelope around each event's <see cref="Data"/> payload: <c>EventType</c>,
+/// <c>Data</c>, and the emission metadata (<c>Timestamp</c>, <c>Actor</c>, <c>Origin</c>,
+/// <c>Hostname</c>, <c>KGSMVersion</c>). <see cref="EventWrapperConverter"/> reads and writes it.
+/// </summary>
+[JsonConverter(typeof(EventWrapperConverter))]
 public class EventWrapper
 {
     /// <summary>
@@ -120,9 +132,11 @@ public class EventWrapper
     public string EventType { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the data associated with the event.
+    /// Gets or sets the event's payload, as the registered type the catalog names for
+    /// <see cref="EventType"/>, or <see cref="UnrecognizedEventData"/> for a name it does not classify.
+    /// <see langword="null"/> when the line carries no payload.
     /// </summary>
-    public JsonElement Data { get; set; }
+    public KgsmEventDataBase? Data { get; set; }
 
     /// <summary>
     /// Gets or sets how much the producer says this event matters, or <see langword="null"/> when it
