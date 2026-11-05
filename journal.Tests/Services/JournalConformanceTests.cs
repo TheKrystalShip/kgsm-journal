@@ -316,6 +316,21 @@ public sealed class JournalConformanceTests : IDisposable
     }
 
     [Fact]
+    public void AFederationOnlyConsumer_GetsTheEventService()
+    {
+        // A consumer that reads only the federated journals dispatches through IEventService as much as
+        // one that reads the engine's journal alone.
+        var services = new ServiceCollection();
+        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
+        services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
+        services.AddKgsmJournalFederation(engineJournalDirectory: _root, stateRoot: _root);
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        Assert.IsType<EventService>(provider.GetRequiredService<IEventService>());
+    }
+
+    [Fact]
     public void Discovery_ScansOnceHoweverManyReadersAskIt()
     {
         // The history reader and the live tail are built from this, and they have to see the same set

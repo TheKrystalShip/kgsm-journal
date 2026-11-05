@@ -133,7 +133,6 @@ public static class JournalServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(options, nameof(options));
 
         services.AddSingleton(options);
-        services.AddSingleton<IEventService, EventService>();
         services.AddSingleton<IEventCursorStore>(sp => string.IsNullOrWhiteSpace(options.EventCursorPath)
             ? new NullEventCursorStore()
             : new FileEventCursorStore(options, sp.GetRequiredService<ILogger<FileEventCursorStore>>()));
@@ -272,6 +271,7 @@ public static class JournalServiceCollectionExtensions
     /// </remarks>
     private static void AddJournalResolution(IServiceCollection services)
     {
+        services.TryAddSingleton<IEventService, EventService>();
         services.TryAddSingleton<IEventSource>(sp =>
             sp.GetService<FederatedEventSource>()
             ?? (IEventSource)sp.GetRequiredService<IEventJournalReader>());
