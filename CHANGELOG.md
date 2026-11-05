@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1]
+
+### Fixed — an unclassified event keeps the names a reader keys its subject off
+
+`UnrecognizedEventData` also carries `ServerId`, `Ref`, `Metric`, `Subject` and `SubjectKind`, so a host-threshold or
+reactor event newer than the catalog a consumer pins still names its subject.
+
 ## [3.0.0]
 
 ### Changed — an event's payload is the registered type its event names (`TheKrystalShip.KGSM.Journal` 3.0.0)

@@ -37,6 +37,16 @@ public class EventWrapperConverterTests
     }
 
     [Fact]
+    public void AnEventTheCatalogDoesNotClassify_StillNamesItsSubject()
+    {
+        EventWrapper wrapper = Read(
+            """{"EventType":"host.threshold.future","Data":{"ServerId":"s1","Ref":"cpu0","Metric":"temp","Subject":"x","SubjectKind":"instance"}}""");
+
+        UnrecognizedEventData data = Assert.IsType<UnrecognizedEventData>(wrapper.Data);
+        Assert.Equal(("s1", "cpu0", "temp", "x", "instance"), (data.ServerId, data.Ref, data.Metric, data.Subject, data.SubjectKind));
+    }
+
+    [Fact]
     public void ALineWithNoPayload_HasNoData()
     {
         Assert.Null(Read("""{"EventType":"server.started","Data":null}""").Data);

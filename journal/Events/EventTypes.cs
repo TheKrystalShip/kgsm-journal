@@ -81,8 +81,9 @@ public abstract class LibraryEventDataBase : KgsmEventDataBase
 }
 
 /// <summary>
-/// The payload of an event the catalog does not classify: only the two names a reader filters on, since
-/// an unclassified event may carry anything and a consumer must not print what it cannot classify.
+/// The payload of an event the catalog does not classify: only the names a reader keys an event's subject
+/// off, since an unclassified event may carry anything and a consumer must not print what it cannot
+/// classify.
 /// </summary>
 public class UnrecognizedEventData : KgsmEventDataBase
 {
@@ -91,6 +92,22 @@ public class UnrecognizedEventData : KgsmEventDataBase
 
     /// <summary>Gets or sets the blueprint the payload names, or null.</summary>
     public string? BlueprintName { get; set; }
+
+    /// <summary>Gets or sets the server a host threshold names, or null.</summary>
+    public string? ServerId { get; set; }
+
+    /// <summary>Gets or sets the measured reference a host threshold names, or null.</summary>
+    public string? Ref { get; set; }
+
+    /// <summary>Gets or sets the metric a host threshold names, or null.</summary>
+    public string? Metric { get; set; }
+
+    /// <summary>Gets or sets what a reactor event judged, or null.</summary>
+    public string? Subject { get; set; }
+
+    /// <summary>Gets or sets what kind of thing a reactor event's subject is, or null.</summary>
+    [JsonPropertyName(ReactorEventFields.SubjectKind)]
+    public string? SubjectKind { get; set; }
 }
 
 /// <summary>
