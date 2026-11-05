@@ -5,7 +5,7 @@
 The repository holds `TheKrystalShip.KGSM.Journal`, the one package every producer and reader of the
 event journals takes: the envelope and the writer, the severity and outcome scale, the conformance checker,
 the federated reader with its cursors and history, `LeafLifecycle`, and the event vocabulary with its
-payload catalog. Linux-only. Role, contracts and peers: `../kgsm-docs/components/kgsm-lib.md`.
+payload catalog. Linux-only. Role, contracts and peers: `../kgsm-docs/components/kgsm-journal.md`.
 
 The engine is not here: its reads are `TheKrystalShip.KGSM.Engine` and its writes the typed invocation in
 `TheKrystalShip.KGSM.Engine.Contracts`, both built from the `kgsm` repository.
@@ -43,7 +43,7 @@ previous build. Build first, then publish:
 
 ```bash
 dotnet build journal/Journal.csproj -c Release
-../scripts/publish-packages.sh kgsm-lib/journal          # the org's GitHub Packages feed
+../scripts/publish-packages.sh kgsm-journal                # the org's GitHub Packages feed
 ```
 
 Verify a package before trusting it: `unzip -p <nupkg> lib/net10.0/TheKrystalShip.KGSM.Journal.dll | strings -el
